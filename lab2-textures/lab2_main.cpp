@@ -81,9 +81,9 @@ void initGL()
 	//Specify which corner of the texture goes where. You can rotate it and stuff here. Neat.
 	float textureCoordinates[] = {
 		0.0f, 0.0f,
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f
+		0.0f, 7.5f,
+		2.0f, 7.5f,
+		2.0f, 0.0f
 	};
 
 
@@ -124,7 +124,7 @@ void initGL()
 
 	// Load an imate
 	int w, h, comp; // Comp is the nubmer of components (?)
-	unsigned char* image = stbi_load("../lab2-textures/awesome.png", &w, &h, &comp, STBI_rgb_alpha);
+	unsigned char* image = stbi_load("../lab2-textures/parrot.jpg", &w, &h, &comp, STBI_rgb_alpha);
 
 	//Generate texture identifier
 	glGenTextures(1, &texture);
@@ -138,6 +138,11 @@ void initGL()
 
 	// Empty the memory space for the image, no need tos ave it now when it's a texture! :D
 	free(image); 
+
+	//Wrap it up
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
 
 	//Texture filtering, necessary but I'm not sure why atm
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
