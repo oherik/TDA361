@@ -27,7 +27,7 @@ GLuint shaderProgram;
 
 // The vertexArrayObject here will hold the pointers to 
 // the vertex data (in positionBuffer) and color data per vertex (in colorBuffer)
-GLuint		positionBuffer, colorBuffer, indexBuffer, vertexArrayObject;						
+GLuint		positionBuffer, colorBuffer, indexBuffer, vertexArrayObject, textureBuffer, texture;
 
 
 
@@ -78,6 +78,7 @@ void initGL()
 	//				 Enable the vertex attrib array.
 	///////////////////////////////////////////////////////////////////////////
 
+	//Specify which corner of the texture goes where. You can rotate it and stuff here. Neat.
 	float textureCoordinates[] = {
 		0.0f, 0.0f,
 		0.0f, 1.0f,
@@ -85,8 +86,8 @@ void initGL()
 		1.0f, 0.0f
 	};
 
+
 	//Generate buffer object
-	GLuint textureBuffer;
 	glGenBuffers(1, &textureBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, textureBuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordinates), textureCoordinates, GL_STATIC_DRAW);
@@ -126,7 +127,6 @@ void initGL()
 	unsigned char* image = stbi_load("../lab2-textures/asphalt.jpg", &w, &h, &comp, STBI_rgb_alpha);
 
 	//Generate texture identifier
-	GLuint texture;
 	glGenTextures(1, &texture);
 
 	//Bind the texture
@@ -174,6 +174,9 @@ void display(void)
 	glUniformMatrix4fv(loc, 1, false, &projectionMatrix[0].x);
 
 	// >>> @task 3.1
+	//Bind the texture to texture unit 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
 
 	glBindVertexArray(vertexArrayObject);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

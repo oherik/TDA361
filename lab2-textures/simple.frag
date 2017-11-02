@@ -7,11 +7,15 @@ in vec3 outColor;
 in vec2 texCoord;
 
 // >>> @task 3.4
-
+//Sample the texture from colorTexture
+layout(binding = 0) uniform sampler2D colorTexture;
 layout(location = 0) out vec4 fragmentColor;
 
 void main() 
 {
+	// Task 1
+	//fragmentColor = vec4(1.0, texCoord.x, texCoord.y, 0.0); 
+
 	// >>> @task 3.5
-	fragmentColor = vec4(1.0, texCoord.x, texCoord.y, 0.0); 
+	fragmentColor = texture2D(colorTexture, texCoord.xy); 
 }
