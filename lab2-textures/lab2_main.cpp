@@ -47,7 +47,7 @@ void initGL()
 		-10.0f, -10.0f, -30.0f,    // v0
 		-10.0f, -10.0f, -330.0f,   // v1
 		10.0f, -10.0f, -330.0f,   // v2
-		10.0f, -10.0f, -30.0f     // v3
+		10.0f, -10.0f, -30.0f    // v3
 	};
 	glGenBuffers(1, &positionBuffer);													// Create a handle for the vertex position buffer
 	glBindBuffer( GL_ARRAY_BUFFER, positionBuffer );									// Set the newly created buffer as the current one
@@ -77,6 +77,26 @@ void initGL()
 	//				 Set up the attrib pointer.
 	//				 Enable the vertex attrib array.
 	///////////////////////////////////////////////////////////////////////////
+
+	float textureCoordinates[] = {
+		0.0f, 0.0f,
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f
+	};
+
+	//Generate buffer object
+	GLuint textureBuffer;
+	glGenBuffers(1, &textureBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, textureBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordinates), textureCoordinates, GL_STATIC_DRAW);
+
+	//Point to it, yo
+	glVertexAttribPointer(2, 2, GL_FLOAT, false, 0, 0);
+
+	//Enable
+	glEnableVertexAttribArray(2);
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// Create the element array buffer object
