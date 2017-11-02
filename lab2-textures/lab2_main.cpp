@@ -124,7 +124,7 @@ void initGL()
 
 	// Load an imate
 	int w, h, comp; // Comp is the nubmer of components (?)
-	unsigned char* image = stbi_load("../lab2-textures/asphalt.jpg", &w, &h, &comp, STBI_rgb_alpha);
+	unsigned char* image = stbi_load("../lab2-textures/awesome.png", &w, &h, &comp, STBI_rgb_alpha);
 
 	//Generate texture identifier
 	glGenTextures(1, &texture);
