@@ -27,7 +27,7 @@ GLuint shaderProgram;
 
 // The vertexArrayObject here will hold the pointers to 
 // the vertex data (in positionBuffer) and color data per vertex (in colorBuffer)
-GLuint		positionBuffer, colorBuffer, indexBuffer, vertexArrayObject, textureBuffer, texture;
+GLuint		positionBuffer, colorBuffer, indexBuffer, vertexArrayObject, vertexArrayObjectExplosion, textureBuffer, texture, explosion;
 
 
 
@@ -39,6 +39,7 @@ void initGL()
 	glGenVertexArrays(1, &vertexArrayObject);
 	glBindVertexArray(vertexArrayObject);
 
+
 	///////////////////////////////////////////////////////////////////////////
 	// Create the positions buffer object
 	///////////////////////////////////////////////////////////////////////////	
@@ -47,7 +48,7 @@ void initGL()
 		-10.0f, -10.0f, -30.0f,    // v0
 		-10.0f, -10.0f, -330.0f,   // v1
 		10.0f, -10.0f, -330.0f,   // v2
-		10.0f, -10.0f, -30.0f    // v3
+		10.0f, -10.0f, -30.0f,    // v3
 	};
 	glGenBuffers(1, &positionBuffer);													// Create a handle for the vertex position buffer
 	glBindBuffer( GL_ARRAY_BUFFER, positionBuffer );									// Set the newly created buffer as the current one
@@ -83,7 +84,7 @@ void initGL()
 		0.0f, 0.0f,
 		0.0f, 15.0f,
 		1.0f, 15.0f,
-		1.0f, 0.0f
+		1.0f, 0.0f,
 	};
 
 
@@ -97,6 +98,8 @@ void initGL()
 
 	//Enable
 	glEnableVertexAttribArray(2);
+
+
 
 
 	///////////////////////////////////////////////////////////////////////////
@@ -122,9 +125,10 @@ void initGL()
 	//************************************
 	// >>> @task 2
 
-	// Load an imate
+	// Load an image
 	int w, h, comp; // Comp is the nubmer of components (?)
 	unsigned char* image = stbi_load("../lab2-textures/asphalt.jpg", &w, &h, &comp, STBI_rgb_alpha);
+
 
 	//Generate texture identifier
 	glGenTextures(1, &texture);
@@ -138,15 +142,87 @@ void initGL()
 
 	// Empty the memory space for the image, no need tos ave it now when it's a texture! :D
 	free(image); 
+	//Wrap it up
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); //Parameter*i* = parameter int?
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	//Texture filtering, necessary but I'm not sure why atm
+	//Mip-map this shit
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	//////////////////////////////////////////////////
+	// Load explosion! :D
+
+
+
+	glGenVertexArrays(1, &vertexArrayObjectExplosion);
+	glBindVertexArray(vertexArrayObjectExplosion);
+
+	const float positionsExplosion[] = {
+		-10.0f, -10.0f, -80.0f,    // v4
+		-10.0f, 10.0f, -80.0f,    // v5
+		10.0f, 10.0f, -80.0f,    // v6
+		10.0f, -10.0f, -80.0f    // v7
+	};
+	
+	glGenBuffers(1, &positionBuffer);													// Create a handle for the vertex position buffer
+	glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);									// Set the newly created buffer as the current one
+	glBufferData(GL_ARRAY_BUFFER, sizeof(positionsExplosion), positionsExplosion, GL_STATIC_DRAW);		// Send the vetex position data to the current buffer
+	glVertexAttribPointer(0, 3, GL_FLOAT, false/*normalized*/, 0/*stride*/, 0/*offset*/);
+	glEnableVertexAttribArray(0);
+
+	const float textureCoordinatesExplosion[] = {
+		0.0f, 0.0f,
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f
+	};
+
+	const int indicesExplosions[] = {
+		0, 1, 3, // Triangle 1
+		1, 2, 3  // Triangle 2
+	};
+	glGenBuffers(1, &indexBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indicesExplosions), indicesExplosions, GL_STATIC_DRAW);
+
+	//Generate buffer object
+	glGenBuffers(1, &textureBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, textureBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordinatesExplosion), textureCoordinatesExplosion, GL_STATIC_DRAW);
+
+	//Point to it, yo
+	glVertexAttribPointer(2, 2, GL_FLOAT, false, 0, 0);
+
+	//Enable
+	glEnableVertexAttribArray(2);
+
+
+
+
+
+	int w2, h2, comp2; // Comp is the nubmer of components (?)
+	unsigned char* explosionImage = stbi_load("../lab2-textures/awesome.png", &w2, &h2, &comp2, STBI_rgb_alpha);
+
+	//Generate texture identifier
+	glGenTextures(1, &explosion);
+
+	//Bind the texture
+	glBindTexture(GL_TEXTURE_2D, explosion);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w2, h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, explosionImage);
+
+	free(explosionImage);
+
+
 
 	//Wrap it up
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); //Parameter*i* = parameter int?
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-
 	//Texture filtering, necessary but I'm not sure why atm
 	//Mip-map this shit
 	glGenerateMipmap(GL_TEXTURE_2D);
+
 	
 }
 
@@ -216,10 +292,20 @@ void display(void)
 	//Bind the texture to texture unit 0
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
-
 	glBindVertexArray(vertexArrayObject);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	
+	//Explosion! Draw it :D
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, explosion);
+	glBindVertexArray(vertexArrayObjectExplosion);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
 	setFiltering();
 
 	glUseProgram( 0 ); // "unsets" the current shader program. Not really necessary.
@@ -280,7 +366,7 @@ int main(int argc, char *argv[])
 		// check events (keyboard among other)
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
-			setFiltering();
+	
 			// Allow ImGui to capture events.
 			ImGui_ImplSdlGL3_ProcessEvent(&event);
 
