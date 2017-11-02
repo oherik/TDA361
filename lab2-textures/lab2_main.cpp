@@ -81,9 +81,9 @@ void initGL()
 	//Specify which corner of the texture goes where. You can rotate it and stuff here. Neat.
 	float textureCoordinates[] = {
 		0.0f, 0.0f,
-		0.0f, 7.5f,
-		2.0f, 7.5f,
-		2.0f, 0.0f
+		0.0f, 15.0f,
+		1.0f, 15.0f,
+		1.0f, 0.0f
 	};
 
 
@@ -124,7 +124,7 @@ void initGL()
 
 	// Load an imate
 	int w, h, comp; // Comp is the nubmer of components (?)
-	unsigned char* image = stbi_load("../lab2-textures/parrot.jpg", &w, &h, &comp, STBI_rgb_alpha);
+	unsigned char* image = stbi_load("../lab2-textures/asphalt.jpg", &w, &h, &comp, STBI_rgb_alpha);
 
 	//Generate texture identifier
 	glGenTextures(1, &texture);
@@ -140,13 +140,47 @@ void initGL()
 	free(image); 
 
 	//Wrap it up
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); //Parameter*i* = parameter int?
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 
 	//Texture filtering, necessary but I'm not sure why atm
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//Mip-map this shit
+	glGenerateMipmap(GL_TEXTURE_2D);
+	
+}
+
+
+void setFiltering(){
+	GLint minimizingMethod, maximizingMethod;
+	switch (mini){
+	case 0: minimizingMethod = GL_NEAREST;
+		break;
+	case 1: minimizingMethod = GL_LINEAR;
+		break;
+	case 2: minimizingMethod = GL_NEAREST_MIPMAP_NEAREST;
+		break;
+	case 3: minimizingMethod = GL_NEAREST_MIPMAP_LINEAR;
+		break;
+	case 4: minimizingMethod = GL_LINEAR_MIPMAP_NEAREST;
+		break;
+	case 5: minimizingMethod = GL_LINEAR_MIPMAP_LINEAR;
+		break;
+	}
+	//Mag and stuff
+	switch (mag){
+	case 0: maximizingMethod = GL_NEAREST;
+		break;
+	case 1: maximizingMethod = GL_LINEAR;
+		break;
+	}
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minimizingMethod);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, maximizingMethod);
+
+	//De-blur. Anisotropic filtering.
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy); //Parameter*f* = parameter float?
+
 
 }
 
@@ -186,9 +220,11 @@ void display(void)
 	glBindVertexArray(vertexArrayObject);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+	setFiltering();
 
 	glUseProgram( 0 ); // "unsets" the current shader program. Not really necessary.
 }
+
 
 void gui() {
 	// Inform imgui of new frame
@@ -218,6 +254,9 @@ void gui() {
 
 	// Render the GUI.
 	ImGui::Render();
+	//Use some filtering on minifying and magnifying, change from just "nearest"
+	//Min and stuff
+	
 }
 
 int main(int argc, char *argv[])
@@ -232,15 +271,16 @@ int main(int argc, char *argv[])
 		// render to window
 		display();
 
-                // Render overlay GUI.
-                //gui();
-
+        // Render overlay GUI.
+        gui();
+		
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);			
 
 		// check events (keyboard among other)
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
+			setFiltering();
 			// Allow ImGui to capture events.
 			ImGui_ImplSdlGL3_ProcessEvent(&event);
 
