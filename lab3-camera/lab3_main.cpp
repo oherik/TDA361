@@ -47,6 +47,7 @@ float currentTime = 0.0f;
 Model *cityModel = nullptr, *carModel = nullptr;
 mat4 carModelMatrix(1.0f);
 mat4 carModelMatrix2(1.0f);
+mat4 carModelMatrix3(1.0f);
 
 vec3 worldUp = vec3(0.0f, 1.0f, 0.0f);
 
@@ -125,6 +126,11 @@ void display(void)
 	//car2
 	//carModelMatrix2 = translate(carModelMatrix2, vec3(2.0f, 0.0f, 2.0f));
 	modelViewProjectionMatrix = projectionMatrix * viewMatrix * carModelMatrix2;
+	glUniformMatrix4fv(loc, 1, false, &modelViewProjectionMatrix[0].x);
+	render(carModel);
+
+	//car3
+	modelViewProjectionMatrix = projectionMatrix * viewMatrix * carModelMatrix3;
 	glUniformMatrix4fv(loc, 1, false, &modelViewProjectionMatrix[0].x);
 	render(carModel);
 
@@ -252,7 +258,7 @@ int main(int argc, char *argv[])
 
 		//Go forward
 		vec3 axis = vec3(0.0f, 1.0f, 0.0f);
-		float distance = 7.0f;
+		float distance = 8.0f;
 		float rotationSpeed = currentTime * 2;
 
 		mat4 rotationMatrix = rotate(-rotationSpeed, axis);
@@ -261,6 +267,12 @@ int main(int argc, char *argv[])
 		mat4 translationMatrix = translate(translationVector);
 		
 		carModelMatrix2 = translationMatrix * rotationMatrix;
+
+		// A third one
+		mat4 T2 = translate(vec3(-14.0f, 0.0f, 0.0f));
+		mat4 R2 = rotate(rotationSpeed, axis);
+
+		carModelMatrix3 = R2 * T2;
 		
 	}
 
