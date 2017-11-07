@@ -46,6 +46,7 @@ float currentTime = 0.0f;
 // Models
 Model *cityModel = nullptr, *carModel = nullptr;
 mat4 carModelMatrix(1.0f);
+mat4 carModelMatrix2(1.0f);
 
 vec3 worldUp = vec3(0.0f, 1.0f, 0.0f);
 
@@ -121,6 +122,11 @@ void display(void)
 	glUniformMatrix4fv(loc, 1, false, &modelViewProjectionMatrix[0].x);
 	render(carModel);
 
+	//car2
+	//carModelMatrix2 = translate(carModelMatrix2, vec3(2.0f, 0.0f, 2.0f));
+	modelViewProjectionMatrix = projectionMatrix * viewMatrix * carModelMatrix2;
+	glUniformMatrix4fv(loc, 1, false, &modelViewProjectionMatrix[0].x);
+	render(carModel);
 
 	glUseProgram( 0 );	
 }
@@ -175,8 +181,8 @@ int main(int argc, char *argv[])
 		// render to window
 		display();
 
-                // Render overlay GUI.
-                //gui();
+		// Render overlay GUI.
+		//gui();
 
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);
@@ -240,6 +246,21 @@ int main(int argc, char *argv[])
 
 		//Rotate, then translate. Yes. Good.
 		carModelMatrix = T * R;
+
+
+		// The second car, make it spin yo
+
+		//Go forward
+		vec3 axis = vec3(0.0f, 1.0f, 0.0f);
+		float distance = 7.0f;
+		float rotationSpeed = currentTime * 2;
+
+		mat4 rotationMatrix = rotate(-rotationSpeed, axis);
+		
+		vec3 translationVector = distance*rotationMatrix[0];
+		mat4 translationMatrix = translate(translationVector);
+		
+		carModelMatrix2 = translationMatrix * rotationMatrix;
 		
 	}
 
