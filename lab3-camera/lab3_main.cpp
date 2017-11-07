@@ -94,11 +94,16 @@ void display(void)
 	// Set up the view matrix
 	// The view matrix defines where the viewer is looking
 	// Initially fixed, but will be replaced in the tutorial.
-	mat4 constantViewMatrix =  mat4(0.707106769f, -0.408248276f, 1.00000000f, 0.000000000f,
-		0.000000000f, 0.816496551f, 1.00000000f, 0.000000000f,
-		-0.707106769f, -0.408248276f, 1.00000000f, 0.000000000f,
-		0.000000000f, 0.000000000f, -30.0000000f, 1.00000000f);
-	mat4 viewMatrix = constantViewMatrix;
+	vec3 cameraRight = normalize(cross(cameraDirection, worldUp));
+	vec3 cameraUp = normalize(cross(cameraRight, cameraDirection));
+	
+	//-cameraDirection eftersom -z är inåt mot skärmen enligt OpenGL. Säkert bra för z-buffering med högre z-värden mm
+	mat3 cameraBaseVectorsWorldSpace(cameraRight, cameraUp, -cameraDirection); 
+
+	mat4 cameraRotation = mat4(transpose(cameraBaseVectorsWorldSpace));
+	//Translate then rotate för att hela världen ska rotera runt en fix punkt
+	mat4 viewMatrix = cameraRotation * translate(-cameraPosition);
+	
 
 	// Setup the projection matrix
         if (w != old_w || h != old_h)
@@ -182,13 +187,12 @@ int main(int argc, char *argv[])
 		//update currentTime
 		std::chrono::duration<float> timeSinceStart = std::chrono::system_clock::now() - startTime;
 		currentTime = timeSinceStart.count();
-		printf("%f", currentTime);
 
 		// render to window
 		display();
 
 		// Render overlay GUI.
-		//gui();
+		gui();
 
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);
@@ -212,6 +216,10 @@ int main(int argc, char *argv[])
 				int delta_y = event.motion.y - prev_ycoord;
 				if (event.button.button & SDL_BUTTON(SDL_BUTTON_LEFT)) {
 					printf("Mouse motion while left button down (%i, %i)\n", event.motion.x, event.motion.y);
+					float rotationSpeed = 0.005f;
+					mat4 yaw = rotate(rotationSpeed * -delta_x, worldUp);
+					mat4 pitch = rotate(rotationSpeed * -delta_y, normalize(cross(cameraDirection, worldUp)));
+					cameraDirection = vec3(pitch * yaw * vec4(cameraDirection, 0.0f));
 				}
 				prev_xcoord = event.motion.x;
 				prev_ycoord = event.motion.y;
@@ -227,20 +235,16 @@ int main(int argc, char *argv[])
 		static mat4 T(1.0f), R(1.0f);
 
 		if (state[SDL_SCANCODE_UP]) {
-			printf("Key Up is pressed down\n");
 			T[3] += speed * R[2];
 		}
 		if (state[SDL_SCANCODE_DOWN]) {
-			printf("Key Down is pressed down\n");
 			T[3] -= speed * R[2];
 		}
 		if (state[SDL_SCANCODE_LEFT]) {
-			printf("Key Left is pressed down\n");
 			//T[3] += speed * vec4(1.0f, 0.0f, 0.0f, 0.0f);
 			R[0] -= turnSpeed * R[2]; //R[2] är tredje kolumnen i 4x4-matrisen (atm en enhetsmatris)
 		}
 		if (state[SDL_SCANCODE_RIGHT]) {
-			printf("Key Right is pressed down\n");
 			//T[3] -= speed * vec4(1.0f, 0.0f, 0.0f, 0.0f);
 			R[0] += turnSpeed * R[2]; //R[2] är tredje kolumnen i 4x4-matrisen (atm en enhetsmatris)
 		}
