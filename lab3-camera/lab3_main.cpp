@@ -51,8 +51,10 @@ mat4 carModelMatrix3(1.0f);
 
 vec3 worldUp = vec3(0.0f, 1.0f, 0.0f);
 
+vec3 cameraRight, cameraUp;
+
 // Camera parameters
-vec3 cameraPosition(10.0f, 10.0f, 10.0f);
+vec3 cameraPosition(0.0f, 0.0f, 0.0f);
 vec3 cameraDirection(-1.0f, -1.0f, -1.0f);
 
 void loadModels()
@@ -94,8 +96,8 @@ void display(void)
 	// Set up the view matrix
 	// The view matrix defines where the viewer is looking
 	// Initially fixed, but will be replaced in the tutorial.
-	vec3 cameraRight = normalize(cross(cameraDirection, worldUp));
-	vec3 cameraUp = normalize(cross(cameraRight, cameraDirection));
+	cameraRight = normalize(cross(cameraDirection, worldUp));
+	cameraUp = normalize(cross(cameraRight, cameraDirection));
 	
 	//-cameraDirection eftersom -z är inåt mot skärmen enligt OpenGL. Säkert bra för z-buffering med högre z-värden mm
 	mat3 cameraBaseVectorsWorldSpace(cameraRight, cameraUp, -cameraDirection); 
@@ -215,7 +217,7 @@ int main(int argc, char *argv[])
 				int delta_x = event.motion.x - prev_xcoord;
 				int delta_y = event.motion.y - prev_ycoord;
 				if (event.button.button & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-					printf("Mouse motion while left button down (%i, %i)\n", event.motion.x, event.motion.y);
+					//printf("Mouse motion while left button down (%i, %i)\n", event.motion.x, event.motion.y);
 					float rotationSpeed = 0.005f;
 					mat4 yaw = rotate(rotationSpeed * -delta_x, worldUp);
 					mat4 pitch = rotate(rotationSpeed * -delta_y, normalize(cross(cameraDirection, worldUp)));
@@ -230,6 +232,22 @@ int main(int argc, char *argv[])
 		const uint8_t *state = SDL_GetKeyboardState(nullptr);
 
 		// implement camera controls based on key states
+		float cameraSpeed = 0.2f;
+
+		if (state[SDL_SCANCODE_W]) {
+			cameraPosition = translate(cameraSpeed*cameraDirection)*vec4(cameraPosition, 1.0f);
+		}
+		if (state[SDL_SCANCODE_S]) {
+			cameraPosition = translate(-cameraSpeed*cameraDirection)*vec4(cameraPosition, 1.0f);
+		}
+		if (state[SDL_SCANCODE_A]) {
+			cameraPosition = translate(-cameraSpeed*cameraRight)*vec4(cameraPosition, 1.0f);
+		}
+		if (state[SDL_SCANCODE_D]) {
+			cameraPosition = translate(cameraSpeed*cameraRight)*vec4(cameraPosition, 1.0f);
+		}
+
+		// Car 1, wroom wroom
 		float speed = 0.3f;
 		float turnSpeed = 0.05f;
 		static mat4 T(1.0f), R(1.0f);
@@ -253,6 +271,12 @@ int main(int argc, char *argv[])
 		R[0] = normalize(R[0]);
 		//Kryssprodukt för att r2 ska bli ortagonal till r0 och r1
 		R[2] = vec4(cross(vec3(R[0]), vec3(R[1])), 0.0f);
+
+		//cameraPosition = T[3];
+		//cameraPosition = vec3(translate(vec3(0.0f, 10.0f, -10.0))*vec4(cameraPosition,1.0f));
+
+		//cameraDirection = R[2];
+		//cameraDirection = vec3(rotate(0.7f, vec3(R[0]))*vec4(cameraDirection, 1.0f));
 
 		//Rotate, then translate. Yes. Good.
 		carModelMatrix = T * R;
