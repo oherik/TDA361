@@ -16,6 +16,9 @@
 using namespace glm;
 using namespace labhelper;
 
+#include <iostream>
+using namespace std;
+
 using std::min;
 using std::max;
 
@@ -167,6 +170,7 @@ int main(int argc, char *argv[])
 		//update currentTime
 		std::chrono::duration<float> timeSinceStart = std::chrono::system_clock::now() - startTime;
 		currentTime = timeSinceStart.count();
+		printf("%f", currentTime);
 
 		// render to window
 		display();
@@ -206,18 +210,37 @@ int main(int argc, char *argv[])
 		const uint8_t *state = SDL_GetKeyboardState(nullptr);
 
 		// implement camera controls based on key states
+		float speed = 0.3f;
+		float turnSpeed = 0.05f;
+		static mat4 T(1.0f), R(1.0f);
+
 		if (state[SDL_SCANCODE_UP]) {
 			printf("Key Up is pressed down\n");
+			T[3] += speed * R[2];
 		}
 		if (state[SDL_SCANCODE_DOWN]) {
 			printf("Key Down is pressed down\n");
+			T[3] -= speed * R[2];
 		}
 		if (state[SDL_SCANCODE_LEFT]) {
 			printf("Key Left is pressed down\n");
+			//T[3] += speed * vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			R[0] -= turnSpeed * R[2]; //R[2] är tredje kolumnen i 4x4-matrisen (atm en enhetsmatris)
 		}
 		if (state[SDL_SCANCODE_RIGHT]) {
 			printf("Key Right is pressed down\n");
+			//T[3] -= speed * vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			R[0] += turnSpeed * R[2]; //R[2] är tredje kolumnen i 4x4-matrisen (atm en enhetsmatris)
 		}
+
+		//Normalisera
+		R[0] = normalize(R[0]);
+		//Kryssprodukt för att r2 ska bli ortagonal till r0 och r1
+		R[2] = vec4(cross(vec3(R[0]), vec3(R[1])), 0.0f);
+
+		//Rotate, then translate. Yes. Good.
+		carModelMatrix = T * R;
+		
 	}
 
 	// Shut down everything. This includes the window and all other subsystems.
