@@ -59,10 +59,18 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 	//            return vec3(0); 
 	///////////////////////////////////////////////////////////////////////////
 
+	float d = length(viewSpaceLightPosition-viewSpacePosition);
+	vec3 Li = point_light_intensity_multiplier * point_light_color * (1 / sqrt(d)); 
+	vec3 wi = normalize(viewSpaceLightPosition-viewSpacePosition);
+
+	if(dot(n,wi) <= 0){
+		return vec3(0);
+	}
+
 	///////////////////////////////////////////////////////////////////////////
 	// Task 1.3 - Calculate the diffuse term and return that as the result
 	///////////////////////////////////////////////////////////////////////////
-	// vec3 diffuse_term = ...
+	vec3 diffuse_term = material_color * (1.0/PI) * abs(dot(n,wi)) * Li;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Task 2 - Calculate the Torrance Sparrow BRDF and return the light 
@@ -71,7 +79,7 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 	///////////////////////////////////////////////////////////////////////////
 	// Task 3 - Make your shader respect the parameters of our material model.
 	///////////////////////////////////////////////////////////////////////////
-	return vec3(material_color);
+	return vec3(diffuse_term);
 }
 
 vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
@@ -95,8 +103,8 @@ void main()
 	// Task 1.1 - Fill in the outgoing direction, wo, and the normal, n. Both
 	//            shall be normalized vectors in view-space. 
 	///////////////////////////////////////////////////////////////////////////
-	vec3 wo = vec3(0.0);
-	vec3 n = vec3(0.0);
+	vec3 wo = normalize(vec3(0)-viewSpacePosition);
+	vec3 n = normalize(viewSpaceNormal);
 
 	vec3 direct_illumination_term = vec3(0.0);
 	{ // Direct illumination
