@@ -52,6 +52,7 @@ vec3 worldUp(0.0f, 1.0f, 0.0f);
 ///////////////////////////////////////////////////////////////////////////////
 // Models
 ///////////////////////////////////////////////////////////////////////////////
+//const std::string model_filename = "../scenes/BigSphere.obj";
 const std::string model_filename = "../scenes/NewShip.obj";
 //const std::string model_filename = "scenes/sphere.obj";
 labhelper::Model *fighterModel = nullptr;
@@ -392,7 +393,7 @@ int main(int argc, char *argv[])
 		//update currentTime
 		std::chrono::duration<float> timeSinceStart = std::chrono::system_clock::now() - startTime;
 		currentTime = timeSinceStart.count();
-
+		//currentTime = 5.0f;
 		// render to window
 		display();
 

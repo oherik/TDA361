@@ -60,7 +60,10 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 	///////////////////////////////////////////////////////////////////////////
 
 	float d = length(viewSpaceLightPosition-viewSpacePosition);
+
+	// Inverse-square law: the intensity is proportional to the spherical area with radius d.
 	vec3 Li = point_light_intensity_multiplier * point_light_color * (1 / sqrt(d)); 
+
 	vec3 wi = normalize(viewSpaceLightPosition-viewSpacePosition);
 
 	if(dot(n,wi) <= 0){
@@ -76,10 +79,34 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 	// Task 2 - Calculate the Torrance Sparrow BRDF and return the light 
 	//          reflected from that instead
 	///////////////////////////////////////////////////////////////////////////
+	
+	// Calculate the half-way vector
+	vec3 wh = normalize(wi+wo); 
+
+	// Approcimation for the fresnel term
+	float F = material_fresnel + (1 - material_fresnel)*pow((1-dot(wh,wi)),5);
+	
+	// Calculate the microfacet distribution function
+	// Normalized Blinn-Phong
+	//Fattar andra delen, men varför (s+2)/(2pi)?
+	float D = (material_shininess+2)/(2*PI)*pow(dot(n,wh),material_shininess);
+
+	//Calculate the shadowing/masking function
+	//Probability of being blocked???
+	float G = min(1, min(2*dot(n,wh)*dot(n,wo)/dot(wo,wh),2*dot(n,wh)*dot(n,wi)/dot(wo,wh)));
+
+	//Put it all together
+	float brdf = F*D*G/(4*dot(n,wo)*dot(n,wi));
 	///////////////////////////////////////////////////////////////////////////
 	// Task 3 - Make your shader respect the parameters of our material model.
 	///////////////////////////////////////////////////////////////////////////
-	return vec3(diffuse_term);
+
+	vec3 dielectric_term = brdf * dot(n,wi)*Li+(1-F)*diffuse_term;
+	vec3 metal_term = brdf * material_color * dot(n,wi)*Li;
+	vec3 microfacet_term = material_metalness * metal_term + (1-material_metalness)*dielectric_term;
+
+	return material_reflectivity*microfacet_term + (1 - material_reflectivity) * diffuse_term;
+	//return brdf * dot(n,wi)*Li;
 }
 
 vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
