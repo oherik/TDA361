@@ -246,7 +246,7 @@ void drawScene(const mat4 &view, const mat4 &projection)
 	labhelper::setUniformSlow(shaderProgram, "modelViewProjectionMatrix", projection * view * modelMatrix);
 	labhelper::setUniformSlow(shaderProgram, "modelViewMatrix", view * modelMatrix);
 	labhelper::setUniformSlow(shaderProgram, "normalMatrix", inverse(transpose(view * modelMatrix)));
-	
+
 	labhelper::render(landingpadModel);
 
 	// Fighter
@@ -296,7 +296,20 @@ void display()
 	// draw scene from security camera
 	///////////////////////////////////////////////////////////////////////////
 	// >>> @task 2
-	// ...
+	//Render from the view of the security camera
+	FboInfo& securityFB = fboList[0]; // Security camera frame buffer. '&' indicates that security now is a *reference* to fboList[0], not the object itself.
+	glBindFramebuffer(GL_FRAMEBUFFER, securityFB.framebufferId);
+
+	//Set viewport and clear viewport
+	glViewport(0, 0, securityFB.width, securityFB.height);
+	glClearColor(0.2, 0.2, 0.8, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	drawScene(securityCamViewMatrix, securityCamProjectionMatrix);
+
+	//Sätt den scenen att visas på skärmarna
+	labhelper::Material &screen = landingpadModel->m_materials[8];
+	screen.m_emission_texture.gl_id = securityFB.colorTextureTarget;
 
 	///////////////////////////////////////////////////////////////////////////
 	// draw scene from camera
@@ -314,7 +327,7 @@ void display()
 	labhelper::setUniformSlow(shaderProgram, "modelViewMatrix", viewMatrix * inverse(securityCamViewMatrix));
 	labhelper::setUniformSlow(shaderProgram, "normalMatrix", inverse(transpose(viewMatrix * inverse(securityCamViewMatrix))));
 	
-	labhelper::render(cameraModel);
+	//labhelper::render(cameraModel);
 
 	///////////////////////////////////////////////////////////////////////////
 	// Post processing pass(es)

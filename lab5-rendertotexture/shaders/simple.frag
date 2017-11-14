@@ -54,15 +54,11 @@ uniform vec3 viewSpaceLightPosition;
 layout(location = 0) out vec4 fragmentColor;
 
 
-
+////////////////////////////
 // Från Lab 4
 vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 {
-	///////////////////////////////////////////////////////////////////////////
-	// Task 1.2 - Calculate the radiance Li from the light, and the direction
-	//            to the light. If the light is backfacing the triangle, 
-	//            return vec3(0); 
-	///////////////////////////////////////////////////////////////////////////
+
 
 	float d = length(viewSpaceLightPosition-viewSpacePosition);
 
@@ -75,15 +71,9 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 		return vec3(0);
 	}
 
-	///////////////////////////////////////////////////////////////////////////
-	// Task 1.3 - Calculate the diffuse term and return that as the result
-	///////////////////////////////////////////////////////////////////////////
+
 	vec3 diffuse_term = material_color * (1.0/PI) * abs(dot(n,wi)) * Li;
 
-	///////////////////////////////////////////////////////////////////////////
-	// Task 2 - Calculate the Torrance Sparrow BRDF and return the light 
-	//          reflected from that instead
-	///////////////////////////////////////////////////////////////////////////
 	
 	// Calculate the half-way vector
 	vec3 wh = normalize(wi+wo); 
@@ -102,10 +92,7 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 
 	//Put it all together
 	float brdf = F*D*G/(4*dot(n,wo)*dot(n,wi));
-	///////////////////////////////////////////////////////////////////////////
-	// Task 3 - Make your shader respect the parameters of our material model.
-	///////////////////////////////////////////////////////////////////////////
-
+	
 	vec3 dielectric_term = brdf * dot(n,wi)*Li+(1-F)*diffuse_term;
 	vec3 metal_term = brdf * material_color * dot(n,wi)*Li;
 	vec3 microfacet_term = material_metalness * metal_term + (1-material_metalness)*dielectric_term;
@@ -116,11 +103,7 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 
 vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 {
-	///////////////////////////////////////////////////////////////////////////
-	// Task 5 - Lookup the irradiance from the irradiance map and calculate
-	//          the diffuse reflection
-	///////////////////////////////////////////////////////////////////////////
-	vec3 nws = vec3(viewInverse*vec4(n,0));
+		vec3 nws = vec3(viewInverse*vec4(n,0));
 	vec3 camera_pos = vec3(0);
 	
 	// Calculate the world-space position of this fragment on the near plane
@@ -141,12 +124,6 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 
 	vec3 diffuse_term = material_color * (1.0 / PI) * irradiance;
 
-
-
-	///////////////////////////////////////////////////////////////////////////
-	// Task 6 - Look up in the reflection map from the perfect specular 
-	//          direction and calculate the dielectric and metal terms. 
-	///////////////////////////////////////////////////////////////////////////
 	vec3 wo_world = vec3(viewInverse*vec4(wo,0));
 	vec3 wi_world = reflect(wo_world,normalize(nws));
 
@@ -173,6 +150,8 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 	//return vec3(0.0);
 }
 
+// Slut Lab 4
+//////////////////////////// 
 
 void main()
 {
