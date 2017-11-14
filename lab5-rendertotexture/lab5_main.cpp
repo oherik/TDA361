@@ -413,7 +413,7 @@ int main(int argc, char *argv[])
 		display();
 
 		// Render overlay GUI.
-		//gui();
+		gui();
 
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);

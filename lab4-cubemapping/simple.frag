@@ -62,7 +62,7 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 	float d = length(viewSpaceLightPosition-viewSpacePosition);
 
 	// Inverse-square law: the intensity is proportional to the spherical area with radius d.
-	vec3 Li = point_light_intensity_multiplier * point_light_color * (1 / sqrt(d)); 
+	vec3 Li = point_light_intensity_multiplier * point_light_color * (1.0 / pow(d,2)); 
 
 	vec3 wi = normalize(viewSpaceLightPosition-viewSpacePosition);
 
@@ -142,8 +142,8 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 	// Task 6 - Look up in the reflection map from the perfect specular 
 	//          direction and calculate the dielectric and metal terms. 
 	///////////////////////////////////////////////////////////////////////////
-	vec3 wo_world = vec3(viewInverse*vec4(wo,0));
-	vec3 wi_world = reflect(wo_world,normalize(nws));
+	vec3 wo_world = vec3(viewInverse*vec4(wo,0.0));
+	vec3 wi_world = reflect(wo_world,nws);
 
 	float roughness = sqrt(sqrt(2.0/(material_shininess+2.0)));
 	vec3 Li = environment_multiplier * textureLod(reflectionMap, lookup, roughness * 7.0).xyz;
