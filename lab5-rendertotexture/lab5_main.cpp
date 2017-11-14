@@ -87,6 +87,8 @@ enum PostProcessingEffect
 int currentEffect = PostProcessingEffect::None;
 int filterSize = 1;
 int filterSizes[12] = {3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25};
+int mosaicSize = 1;
+int mosaicSizes[12] = { 3, 7, 11, 15, 19, 23, 27, 31, 35, 39, 43, 47 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // Framebuffers
@@ -351,6 +353,7 @@ void display()
 	labhelper::setUniformSlow(postFxShader, "time", currentTime);
 	labhelper::setUniformSlow(postFxShader, "currentEffect", currentEffect);
 	labhelper::setUniformSlow(postFxShader, "filterSize", filterSize);
+	labhelper::setUniformSlow(postFxShader, "mosaicSize", mosaicSize);
 	
 	//Draw two triangles
 	labhelper::drawFullScreenQuad();
@@ -437,6 +440,8 @@ void gui()
 	ImGui::RadioButton("Grayscale", &currentEffect, PostProcessingEffect::Grayscale);
 	ImGui::RadioButton("All of the above", &currentEffect, PostProcessingEffect::Composition);
 	ImGui::RadioButton("Mosaic", &currentEffect, PostProcessingEffect::Mosaic);
+	ImGui::SameLine();
+	ImGui::SliderInt("Mosaic size", &mosaicSize, 1, 24);
 	ImGui::RadioButton("Separable Blur", &currentEffect, PostProcessingEffect::Separable_blur);
 	ImGui::RadioButton("Bloom", &currentEffect, PostProcessingEffect::Bloom);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

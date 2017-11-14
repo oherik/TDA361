@@ -8,6 +8,7 @@ layout(binding = 1) uniform sampler2D blurredFrameBufferTexture;
 uniform float time;
 uniform int currentEffect;
 uniform int filterSize;
+uniform int mosaicSize;
 layout(location = 0) out vec4 fragmentColor;
 
 
@@ -90,8 +91,8 @@ void main()
 
 vec3 mosaic(vec2 coord){
 	vec3 result = vec3(0.0);
-	float x = round(coord.x/filterSize)*filterSize;
-	float y = round(coord.y/filterSize)*filterSize;
+	float x = round(coord.x/mosaicSize)*mosaicSize;
+	float y = round(coord.y/mosaicSize)*mosaicSize;
 
 	return textureRect(frameBufferTexture, vec2(x,y)).xyz;
 }
