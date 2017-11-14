@@ -32,7 +32,7 @@ float currentTime = 0.0f;
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
 ///////////////////////////////////////////////////////////////////////////////
-GLuint backgroundProgram, shaderProgram, postFxShader, horizontalBlurShader, verticalBlurShader;
+GLuint backgroundProgram, shaderProgram, postFxShader, horizontalBlurShader, verticalBlurShader, cutoffShader;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Environment
@@ -199,6 +199,7 @@ void initGL()
 	postFxShader      = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/postFx.vert",     "../lab5-rendertotexture/shaders/postFx.frag");
 	horizontalBlurShader = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/postFx.vert", "../lab5-rendertotexture/shaders/horizontal_blur.frag");
 	verticalBlurShader = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/postFx.vert", "../lab5-rendertotexture/shaders/vertical_blur.frag");
+	cutoffShader = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/postFx.vert", "../lab5-rendertotexture/shaders/cuttoff.frag");
 
 	///////////////////////////////////////////////////////////////////////////
 	// Load environment map
@@ -339,6 +340,26 @@ void display()
 	//labhelper::render(cameraModel);
 
 	/////////////////////////////////
+	// Cutoff and bloom
+	/////////////////////////////////
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	FboInfo& cFB = fboList[4];
+	glBindFramebuffer(GL_FRAMEBUFFER, cFB.framebufferId);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, pPFB.colorTextureTarget);
+
+	glUseProgram(cutoffShader);
+	labhelper::drawFullScreenQuad();
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, cFB.colorTextureTarget);
+
+
+	/////////////////////////////////
 	// Efficient blur
 	/////////////////////////////////
 
@@ -368,6 +389,9 @@ void display()
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, vBFB.colorTextureTarget);
+
+	
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// Post processing pass(es)

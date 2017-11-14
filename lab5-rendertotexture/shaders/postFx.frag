@@ -5,6 +5,7 @@ precision highp float;
 
 layout(binding = 0) uniform sampler2D frameBufferTexture;
 layout(binding = 1) uniform sampler2D blurredFrameBufferTexture;
+layout(binding = 2) uniform sampler2D cutoffFrameBufferTexture;
 uniform float time;
 uniform int currentEffect;
 uniform int filterSize;
@@ -87,7 +88,7 @@ void main()
 		fragmentColor = textureRect(blurredFrameBufferTexture, gl_FragCoord.xy);
 		break;
 	case 8:
-		fragmentColor = vec4(0.0); // place holder
+		fragmentColor = textureRect(cutoffFrameBufferTexture, gl_FragCoord.xy);
 		break;
 	}
 }
