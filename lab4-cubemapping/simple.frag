@@ -115,7 +115,7 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 	// Task 5 - Lookup the irradiance from the irradiance map and calculate
 	//          the diffuse reflection
 	///////////////////////////////////////////////////////////////////////////
-	vec3 nws = vec3(viewInverse*vec4(n,1));
+	vec3 nws = vec3(viewInverse*vec4(n,0));
 	vec3 camera_pos = vec3(0);
 	
 	// Calculate the world-space position of this fragment on the near plane
@@ -142,11 +142,10 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 	// Task 6 - Look up in the reflection map from the perfect specular 
 	//          direction and calculate the dielectric and metal terms. 
 	///////////////////////////////////////////////////////////////////////////
+	vec3 wo_world = vec3(viewInverse*vec4(wo,0));
+	vec3 wi_world = reflect(wo_world,normalize(nws));
 
-	vec3 wi_world = vec3(viewInverse*vec4(reflect(wo,n),1));
-	vec3 wo_world = vec3(viewInverse*vec4(wo,1));
-
-	float roughness = sqrt(sqrt(2/(material_shininess+2)));
+	float roughness = sqrt(sqrt(2.0/(material_shininess+2.0)));
 	vec3 Li = environment_multiplier * textureLod(reflectionMap, lookup, roughness * 7.0).xyz;
 
 
@@ -154,15 +153,14 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 	vec3 wh = normalize(wi_world+wo_world); 
 
 	// Approcimation for the fresnel term
-	float F = material_fresnel + (1 - material_fresnel)*pow((1-dot(wh,wi_world)),5);
+	float F = material_fresnel + (1.0 - material_fresnel)*pow((1.0 - dot(wh,wi_world)), 5.0);
 	
-
-	vec3 dielectric_term = F*Li+(1-F)*diffuse_term;
-	vec3 metal_term = F*material_color*Li;
+	vec3 dielectric_term = F * Li + (1.0 - F) * diffuse_term;
+	vec3 metal_term = F * material_color * Li;
 
 	vec3 microfacet_term = material_metalness * metal_term + (1-material_metalness)*dielectric_term;
 
-	return material_reflectivity*microfacet_term + (1 - material_reflectivity) * diffuse_term;
+	return material_reflectivity*microfacet_term + (1.0 - material_reflectivity) * diffuse_term;
 	
 
 
@@ -193,7 +191,7 @@ void main()
 	///////////////////////////////////////////////////////////////////////////
 	// Task 7 - Make glowy things glow!
 	///////////////////////////////////////////////////////////////////////////
-	vec3 emission_term = vec3(0.0);
+	vec3 emission_term =material_emission * material_color;
 
 	fragmentColor.xyz =
 		direct_illumination_term +
