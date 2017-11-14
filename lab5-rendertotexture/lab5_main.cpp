@@ -314,12 +314,17 @@ void display()
 	///////////////////////////////////////////////////////////////////////////
 	// draw scene from camera
 	///////////////////////////////////////////////////////////////////////////
-	glBindFramebuffer(GL_FRAMEBUFFER, 0); // to be replaced with another framebuffer when doing post processing
+	FboInfo& pPFB = fboList[1]; // post-processing framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, pPFB.framebufferId);
 	glViewport(0, 0, w, h);
 	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	drawScene(viewMatrix, projectionMatrix); // using both shaderProgram and backgroundProgram
+	
+	//Bind the post-processing texture to texture unit 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, pPFB.colorTextureTarget);
 
 	// camera (obj-model)
 	glUseProgram(shaderProgram);
@@ -332,6 +337,24 @@ void display()
 	///////////////////////////////////////////////////////////////////////////
 	// Post processing pass(es)
 	///////////////////////////////////////////////////////////////////////////
+	
+	// Bind the default framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	//Clear it
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//Set active shader program
+	glUseProgram(postFxShader);
+
+	//Set uniforms to be used in the fragment shader. Uniforms don't change over time, as opposed to the input/output of shaders.
+	labhelper::setUniformSlow(postFxShader, "time", currentTime);
+	labhelper::setUniformSlow(postFxShader, "currentEffect", currentEffect);
+	labhelper::setUniformSlow(postFxShader, "filterSize", filterSize);
+	
+	//Draw two triangles
+	labhelper::drawFullScreenQuad();
+	
 	glUseProgram( 0 );
 
 	CHECK_GL_ERROR();
@@ -441,7 +464,7 @@ int main(int argc, char *argv[])
 		display();
 
 		// Render overlay GUI.
-		//gui();
+		gui();
 
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);
