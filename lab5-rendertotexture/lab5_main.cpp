@@ -32,7 +32,7 @@ float currentTime = 0.0f;
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
 ///////////////////////////////////////////////////////////////////////////////
-GLuint backgroundProgram, shaderProgram, postFxShader;
+GLuint backgroundProgram, shaderProgram, postFxShader, horizontalBlurShader, verticalBlurShader;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Environment
@@ -197,6 +197,8 @@ void initGL()
 	backgroundProgram = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/background.vert", "../lab5-rendertotexture/shaders/background.frag");
 	shaderProgram     = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/simple.vert",     "../lab5-rendertotexture/shaders/simple.frag");
 	postFxShader      = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/postFx.vert",     "../lab5-rendertotexture/shaders/postFx.frag");
+	horizontalBlurShader = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/postFx.vert", "../lab5-rendertotexture/shaders/horizontal_blur.frag");
+	verticalBlurShader = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/postFx.vert", "../lab5-rendertotexture/shaders/vertical_blur.frag");
 
 	///////////////////////////////////////////////////////////////////////////
 	// Load environment map
@@ -335,6 +337,37 @@ void display()
 	labhelper::setUniformSlow(shaderProgram, "normalMatrix", inverse(transpose(viewMatrix * inverse(securityCamViewMatrix))));
 	
 	//labhelper::render(cameraModel);
+
+	/////////////////////////////////
+	// Efficient blur
+	/////////////////////////////////
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	FboInfo& hBFB = fboList[2];
+	glBindFramebuffer(GL_FRAMEBUFFER, hBFB.framebufferId);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, pPFB.colorTextureTarget);
+	
+	glUseProgram(horizontalBlurShader);
+	labhelper::drawFullScreenQuad();
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	FboInfo& vBFB = fboList[3];
+	glBindFramebuffer(GL_FRAMEBUFFER, vBFB.framebufferId);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, pPFB.colorTextureTarget);
+
+	glUseProgram(verticalBlurShader);
+	labhelper::drawFullScreenQuad();
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, vBFB.colorTextureTarget);
 
 	///////////////////////////////////////////////////////////////////////////
 	// Post processing pass(es)

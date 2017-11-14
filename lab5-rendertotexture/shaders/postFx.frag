@@ -53,6 +53,9 @@ vec3 toSepiaTone(vec3 rgbSample);
  */
 vec3 mosaic(vec2 coord);
 
+// Nice blurriness
+vec3 separableBlur(vec2 coord);
+
 
 void main()
 {
@@ -81,7 +84,7 @@ void main()
 		fragmentColor = vec4(mosaic(gl_FragCoord.xy),1.0); 
 		break;
 	case 7:
-		fragmentColor = vec4(0.0); // place holder
+		fragmentColor = textureRect(blurredFrameBufferTexture, gl_FragCoord.xy);
 		break;
 	case 8:
 		fragmentColor = vec4(0.0); // place holder
