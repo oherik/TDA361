@@ -67,7 +67,7 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 	float d = length(viewSpaceLightPosition-viewSpacePosition);
 
 	// Inverse-square law: the intensity is proportional to the spherical area with radius d.
-	vec3 Li = point_light_intensity_multiplier * point_light_color * (1 / sqrt(d)); 
+	vec3 Li = point_light_intensity_multiplier * point_light_color * (1 / pow(d,2)); 
 
 	vec3 wi = normalize(viewSpaceLightPosition-viewSpacePosition);
 

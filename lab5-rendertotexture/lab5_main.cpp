@@ -93,7 +93,7 @@ int filterSizes[12] = {3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25};
 ///////////////////////////////////////////////////////////////////////////////
 
 struct FboInfo;
-std::vector<FboInfo> fboList;
+std::vector<FboInfo> fboList; // En vector är en dynamically sized array
 
 struct FboInfo {
 	GLuint framebufferId;
@@ -125,6 +125,16 @@ struct FboInfo {
 		// Generate and bind framebuffer
 		///////////////////////////////////////////////////////////////////////
 		// >>> @task 1
+		glGenFramebuffers(1, &framebufferId);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebufferId);
+
+		//Binda färgtexturen som färg-attachement i currently bound buffer
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTextureTarget, 0);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+		// Attacha djuptexturen som djupattachement (max 1 per framebuffer)
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0);
+
 		// check if framebuffer is complete
 		isComplete = checkFramebufferComplete();
 
@@ -203,6 +213,11 @@ void initGL()
 	///////////////////////////////////////////////////////////////////////////
 	int w, h;
 	SDL_GetWindowSize(g_window, &w, &h);
+	const int numFbos = 5;  // Set number of framebuffer objects (FBOs)
+	for (int i = 0; i < numFbos; i++){
+		fboList.push_back(FboInfo(w, h)); // Släng in i slutet av vectorarraygrejen ba
+	}
+
 }
 
 void drawScene(const mat4 &view, const mat4 &projection)
@@ -413,7 +428,7 @@ int main(int argc, char *argv[])
 		display();
 
 		// Render overlay GUI.
-		gui();
+		//gui();
 
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);
