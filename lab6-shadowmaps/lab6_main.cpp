@@ -68,10 +68,10 @@ enum ClampMode {
 FboInfo shadowMapFB;
 int shadowMapResolution = 1024;
 int shadowMapClampMode = ClampMode::Edge;
-bool usePolygonOffest = false;
+bool usePolygonOffest = true;
 bool useSoftFalloff = false;
 bool useHardwarePCF = false;
-float polygonOffset_factor = .25f;
+float polygonOffset_factor = 1.1f;
 float polygonOffset_units = 1.0f;
 
 
@@ -129,7 +129,6 @@ void initGL()
 	// Setup Framebuffer for shadow map rendering
 	///////////////////////////////////////////////////////////////////////
 	shadowMapFB.resize(shadowMapResolution, shadowMapResolution);
-
 
 	glEnable(GL_DEPTH_TEST);	// enable Z-buffering 
 	glEnable(GL_CULL_FACE);		// enables backface culling
@@ -231,6 +230,22 @@ void display(void)
 		shadowMapFB.resize(shadowMapResolution, shadowMapResolution);
 	}
 
+	//Task 3.2 clampilamp
+
+	if (shadowMapClampMode == ClampMode::Edge){
+		glBindTexture(GL_TEXTURE_2D, shadowMapFB.depthBuffer);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+
+	if (shadowMapClampMode == ClampMode::Border){
+		glBindTexture(GL_TEXTURE_2D, shadowMapFB.depthBuffer);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		vec4 zeros = vec4(0.0);
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &zeros.x);
+	}
+
 	///////////////////////////////////////////////////////////////////////////
 	// Draw Shadow Map
 	///////////////////////////////////////////////////////////////////////////
@@ -240,14 +255,22 @@ void display(void)
 	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	//Remove acne
+	if (usePolygonOffest){
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(polygonOffset_factor, polygonOffset_factor);
+	}
+
 	drawScene(simpleShaderProgram, lightViewMatrix, lightProjMatrix, lightViewMatrix, lightProjMatrix, lightMatrix);
 
 	//Visualize the render from the camera's point of view
 	labhelper::Material &screen = landingpadModel->m_materials[8]; //[8] is the TV screens
 	screen.m_emission_texture.gl_id = shadowMapFB.colorTextureTarget; //Emissiva det som renderats från ljusets synvinkel
 
-	//Set the light matrix
-
+	//Remove acne, step 2
+	if (usePolygonOffest){
+		glDisable(GL_POLYGON_OFFSET_FILL);
+	}
 
 	///////////////////////////////////////////////////////////////////////////
 	// Draw from camera

@@ -167,6 +167,14 @@ void main()
 	float depth = texture(shadowMapTex, shadowMapCoord.xy / shadowMapCoord.w).x; // Juste fö den kommer ha ett visst svartvitt x-värde kanske eller?
 	float visibility = (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
 
+	//Task 3.2: spotlight
+	vec3 posToLight = normalize(viewSpaceLightPosition - viewSpacePosition);
+	float cosAngle = dot(posToLight, -viewSpaceLightDir); // Ty a dot b = ||a||*||b||*cos(theta) och vektorerna är normaliserade => ||a|| = ||b|| = 1
+
+	float spotAttenuation = cosAngle > spotOuterAngle ? 1.0 : 0.0
+		visibility *= spotAttenuation;
+
+
 	float attenuation = 1.0;
 	
 	vec3 wo = -normalize(viewSpacePosition);
