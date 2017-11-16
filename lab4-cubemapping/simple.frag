@@ -116,14 +116,10 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 	//          the diffuse reflection
 	///////////////////////////////////////////////////////////////////////////
 	vec3 nws = vec3(viewInverse*vec4(n,0));
-	vec3 camera_pos = vec3(0);
-	
-	// Calculate the world-space position of this fragment on the near plane
-	vec4 pixel_world_pos = viewInverse * vec4(viewSpacePosition, 1.0);
-	pixel_world_pos = (1.0 / pixel_world_pos.w) * pixel_world_pos;
+
 	
 	// Calculate the world-space direction from the camera to that position
-	vec3 dir = normalize(pixel_world_pos.xyz - camera_pos);
+	vec3 dir = nws;
 	
 	// Calculate the spherical coordinates of the direction
 	float theta = acos(max(-1.0f, min(1.0f, dir.y)));
@@ -142,18 +138,30 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 	// Task 6 - Look up in the reflection map from the perfect specular 
 	//          direction and calculate the dielectric and metal terms. 
 	///////////////////////////////////////////////////////////////////////////
-	vec3 wo_world = vec3(viewInverse*vec4(wo,0.0));
-	vec3 wi_world = reflect(wo_world,nws);
+	vec3 wi = reflect(-wo,n);
+	vec3 wi_world = (viewInverse * vec4(wi, 0.0)).xyz;
 
+	dir = wi_world;
+
+	// Calculate the spherical coordinates of the direction
+	theta = acos(max(-1.0f, min(1.0f, dir.y)));
+	phi = atan(dir.z, dir.x);
+	if (phi < 0.0f) phi = phi + 2.0f * PI;
+
+	// Use these to lookup the color in the environment map
+	lookup = vec2(phi / (2.0 * PI), theta / PI);
+
+	
+	
 	float roughness = sqrt(sqrt(2.0/(material_shininess+2.0)));
 	vec3 Li = environment_multiplier * textureLod(reflectionMap, lookup, roughness * 7.0).xyz;
 
 
 	// Calculate the half-way vector
-	vec3 wh = normalize(wi_world+wo_world); 
+	vec3 wh = normalize(wi+wo); 
 
 	// Approcimation for the fresnel term
-	float F = material_fresnel + (1.0 - material_fresnel)*pow((1.0 - dot(wh,wi_world)), 5.0);
+	float F = material_fresnel + (1.0 - material_fresnel)*pow((1.0 - dot(wh,wi)), 5.0);
 	
 	vec3 dielectric_term = F * Li + (1.0 - F) * diffuse_term;
 	vec3 metal_term = F * material_color * Li;
