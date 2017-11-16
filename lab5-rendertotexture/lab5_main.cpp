@@ -381,6 +381,21 @@ void display()
 	FboInfo& vBFB = fboList[3];
 	glBindFramebuffer(GL_FRAMEBUFFER, vBFB.framebufferId);
 
+
+	// BLur the cutoff
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, cFB.colorTextureTarget);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, cFB.framebufferId);
+	glUseProgram(verticalBlurShader);
+	labhelper::drawFullScreenQuad();
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, cFB.colorTextureTarget);
+
+
+	//Blur the scene
+	glBindFramebuffer(GL_FRAMEBUFFER, vBFB.framebufferId);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, pPFB.colorTextureTarget);
 

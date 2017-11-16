@@ -88,7 +88,7 @@ void main()
 		fragmentColor = textureRect(blurredFrameBufferTexture, gl_FragCoord.xy);
 		break;
 	case 8:
-		fragmentColor = textureRect(cutoffFrameBufferTexture, gl_FragCoord.xy);
+		fragmentColor = textureRect(cutoffFrameBufferTexture, gl_FragCoord.xy) + textureRect(frameBufferTexture, gl_FragCoord.xy);
 		break;
 	}
 }
