@@ -155,7 +155,7 @@ void drawBackground(const mat4 &viewMatrix, const mat4 &projectionMatrix)
 	labhelper::drawFullScreenQuad();
 }
 
-void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &projectionMatrix, const mat4 &lightViewMatrix, const mat4 &lightProjectionMatrix)
+void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &projectionMatrix, const mat4 &lightViewMatrix, const mat4 &lightProjectionMatrix, const mat4 &lightMatrix)
 {
 	glUseProgram(currentShaderProgram);
 	// Light source
@@ -172,6 +172,9 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 
 	// camera
 	labhelper::setUniformSlow(currentShaderProgram, "viewInverse", inverse(viewMatrix));
+
+	// Task 2: light camera
+	labhelper::setUniformSlow(currentShaderProgram, "lightMatrix", lightMatrix);
 
 	// landing pad 
 	mat4 modelMatrix(1.0f);
@@ -206,6 +209,9 @@ void display(void)
 	mat4 lightViewMatrix = lookAt(lightPosition, vec3(0.0f), worldUp);
 	mat4 lightProjMatrix = perspective(radians(45.0f), 1.0f, 25.0f, 100.0f);
 
+	//Task 2
+	mat4 lightMatrix = lightProjMatrix * lightViewMatrix * inverse(viewMatrix);
+
 	///////////////////////////////////////////////////////////////////////////
 	// Bind the environment map(s) to unused texture units
 	///////////////////////////////////////////////////////////////////////////
@@ -229,15 +235,19 @@ void display(void)
 	// Draw Shadow Map
 	///////////////////////////////////////////////////////////////////////////
 
-	//glGenFramebuffers(1, &shadowMapFB.framebufferId);
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFB.framebufferId);
+	glViewport(0, 0, shadowMapFB.width, shadowMapFB.height); // Set the correct viewport mapping. Hur stort fönster vi har. När vi renderar till vår framebuffern, vår textur.
+	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	drawScene(simpleShaderProgram, lightViewMatrix, lightProjMatrix, lightViewMatrix, lightProjMatrix);
+	drawScene(simpleShaderProgram, lightViewMatrix, lightProjMatrix, lightViewMatrix, lightProjMatrix, lightMatrix);
 
 	//Visualize the render from the camera's point of view
 	labhelper::Material &screen = landingpadModel->m_materials[8]; //[8] is the TV screens
 	screen.m_emission_texture.gl_id = shadowMapFB.colorTextureTarget; //Emissiva det som renderats från ljusets synvinkel
+
+	//Set the light matrix
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// Draw from camera
@@ -246,9 +256,16 @@ void display(void)
 	glViewport(0, 0, w, h);
 	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	
 	drawBackground(viewMatrix, projMatrix);
-	drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
+
+	//Task 2: bind the depth buffer from the shadow map frame buffer to texture 10
+	glActiveTexture(GL_TEXTURE10);
+	glBindTexture(GL_TEXTURE_2D, shadowMapFB.depthBuffer);
+
+
+	drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix, lightMatrix);
 	debugDrawLight(viewMatrix, projMatrix, vec3(lightPosition));
 
 	

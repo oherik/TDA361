@@ -42,6 +42,10 @@ in vec2 texCoord;
 in vec3 viewSpaceNormal;
 in vec3 viewSpacePosition;
 
+//Task 2
+in vec4 shadowMapCoord;
+layout(binding = 10) uniform sampler2D shadowMapTex;
+
 ///////////////////////////////////////////////////////////////////////////////
 // Input uniform variables
 ///////////////////////////////////////////////////////////////////////////////
@@ -159,10 +163,12 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 
 void main() 
 {
-	float visibility = 1.0;
+	// Task 2: shadow map
+	float depth = texture(shadowMapTex, shadowMapCoord.xy / shadowMapCoord.w).x; // Juste fö den kommer ha ett visst svartvitt x-värde kanske eller?
+	float visibility = (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
+
 	float attenuation = 1.0;
 	
-
 	vec3 wo = -normalize(viewSpacePosition);
 	vec3 n = normalize(viewSpaceNormal);
 
@@ -171,6 +177,8 @@ void main()
 
 	// Indirect illumination
 	vec3 indirect_illumination_term = calculateIndirectIllumination(wo, n);
+
+	
 
 	///////////////////////////////////////////////////////////////////////////
 	// Add emissive term. If emissive texture exists, sample this term.
