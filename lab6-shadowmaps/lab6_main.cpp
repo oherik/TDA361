@@ -221,10 +221,23 @@ void display(void)
 	// Set up shadow map parameters
 	///////////////////////////////////////////////////////////////////////////
 	// >>> @task 1
+	if (shadowMapFB.width != shadowMapResolution || shadowMapFB.height != shadowMapResolution){
+		shadowMapFB.resize(shadowMapResolution, shadowMapResolution);
+	}
 
 	///////////////////////////////////////////////////////////////////////////
 	// Draw Shadow Map
 	///////////////////////////////////////////////////////////////////////////
+
+	//glGenFramebuffers(1, &shadowMapFB.framebufferId);
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFB.framebufferId);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	drawScene(simpleShaderProgram, lightViewMatrix, lightProjMatrix, lightViewMatrix, lightProjMatrix);
+
+	//Visualize the render from the camera's point of view
+	labhelper::Material &screen = landingpadModel->m_materials[8]; //[8] is the TV screens
+	screen.m_emission_texture.gl_id = shadowMapFB.colorTextureTarget; //Emissiva det som renderats från ljusets synvinkel
 
 	///////////////////////////////////////////////////////////////////////////
 	// Draw from camera
