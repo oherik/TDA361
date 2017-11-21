@@ -47,7 +47,10 @@ in vec3 viewSpacePosition;
 
 //Task 2
 in vec4 shadowMapCoord;
-layout(binding = 10) uniform sampler2D shadowMapTex;
+//layout(binding = 10) uniform sampler2D shadowMapTex;
+
+//Task 5
+layout(binding = 10) uniform sampler2DShadow shadowMapTex;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Input uniform variables
@@ -167,8 +170,11 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 void main() 
 {
 	// Task 2: shadow map
-	float depth = texture(shadowMapTex, shadowMapCoord.xy / shadowMapCoord.w).x; // Juste fö den kommer ha ett visst svartvitt x-värde kanske eller?
-	float visibility = (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
+	//float depth = texture(shadowMapTex, shadowMapCoord.xy / shadowMapCoord.w).x; // Juste fö den kommer ha ett visst svartvitt x-värde kanske eller?
+	//float visibility = (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
+
+	//Task 5
+	float visibility = textureProj(shadowMapTex, shadowMapCoord);
 
 	//Task 3.2: spotlight
 	vec3 posToLight = normalize(viewSpaceLightPosition - viewSpacePosition);

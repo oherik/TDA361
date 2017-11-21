@@ -66,7 +66,7 @@ enum ClampMode {
 };
 
 FboInfo shadowMapFB;
-int shadowMapResolution = 1024;
+int shadowMapResolution = 128;
 int shadowMapClampMode = ClampMode::Edge;
 bool usePolygonOffest = true;
 bool useSoftFalloff = false;
@@ -128,10 +128,16 @@ void initGL()
 	///////////////////////////////////////////////////////////////////////
 	// Setup Framebuffer for shadow map rendering
 	///////////////////////////////////////////////////////////////////////
+
 	shadowMapFB.resize(shadowMapResolution, shadowMapResolution);
 
 	glEnable(GL_DEPTH_TEST);	// enable Z-buffering 
 	glEnable(GL_CULL_FACE);		// enables backface culling
+
+	// Task 5
+	glBindTexture(GL_TEXTURE_2D, shadowMapFB.depthBuffer);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 }
 
 void debugDrawLight(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
@@ -210,6 +216,11 @@ void display(void)
 
 	//Task 2
 	mat4 lightMatrix = lightProjMatrix * lightViewMatrix * inverse(viewMatrix);
+
+	//Task 5
+	mat4 scaleMatrix = scale(vec3(0.5));
+	mat4 translateMatrix = translate(vec3(0.5));
+	lightMatrix = translateMatrix * scaleMatrix * lightMatrix;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Bind the environment map(s) to unused texture units

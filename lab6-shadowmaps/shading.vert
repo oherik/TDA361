@@ -35,6 +35,6 @@ void main()
 	//Task 2
 	shadowMapCoord = lightMatrix * vec4(viewSpacePosition, 1.0); // Så blir -1 till 1 på alla, i light clipping space
 
-	shadowMapCoord.xyz *= vec3(0.5, 0.5, 0.5); //Skala alla med 0.5. * är **komponentvis** multiplikation
-	shadowMapCoord.xyz  += (shadowMapCoord.w * vec3(0.5, 0.5, 0.5)); //Lägg till 0.5 på alla. ".w" for later division
+	//shadowMapCoord.xyz *= vec3(0.5, 0.5, 0.5); //Skala alla med 0.5. * är **komponentvis** multiplikation
+	//shadowMapCoord.xyz  += (shadowMapCoord.w * vec3(0.5, 0.5, 0.5)); //Lägg till 0.5 på alla. ".w" for later division
 }
