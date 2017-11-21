@@ -52,7 +52,7 @@ const std::string envmap_base_name = "001";
 vec3 lightPosition;
 vec3 point_light_color = vec3(1.f, 1.f, 1.f);
 bool useSpotLight = false;
-float innerSpotlightAngle = 17.5f;
+float innerSpotlightAngle = 21.0f;
 float outerSpotlightAngle = 22.5f;
 float point_light_intensity_multiplier = 10000.0f;
 
@@ -164,7 +164,7 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightPosition", vec3(viewSpaceLightPosition));
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
 	labhelper::setUniformSlow(currentShaderProgram, "spotOuterAngle", std::cos(radians(outerSpotlightAngle)));
-
+	labhelper::setUniformSlow(currentShaderProgram, "spotInnerAngle", std::cos(radians(innerSpotlightAngle)));
 
 	// Environment
 	labhelper::setUniformSlow(currentShaderProgram, "environment_multiplier", environment_multiplier);

@@ -29,6 +29,9 @@ uniform float environment_multiplier;
 ///////////////////////////////////////////////////////////////////////////////
 uniform vec3 point_light_color = vec3(1.0, 1.0, 1.0);
 uniform float point_light_intensity_multiplier = 50.0;
+uniform vec3 viewSpaceLightDir;
+uniform float spotOuterAngle;
+uniform float spotInnerAngle;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -171,8 +174,9 @@ void main()
 	vec3 posToLight = normalize(viewSpaceLightPosition - viewSpacePosition);
 	float cosAngle = dot(posToLight, -viewSpaceLightDir); // Ty a dot b = ||a||*||b||*cos(theta) och vektorerna är normaliserade => ||a|| = ||b|| = 1
 
-	float spotAttenuation = cosAngle > spotOuterAngle ? 1.0 : 0.0
-		visibility *= spotAttenuation;
+	//float spotAttenuation = cosAngle > spotOuterAngle ? 1.0 : 0.0;
+	float spotAttenuation = smoothstep(spotOuterAngle, spotInnerAngle, cosAngle);
+	visibility *= spotAttenuation;
 
 
 	float attenuation = 1.0;
