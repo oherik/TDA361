@@ -73,6 +73,17 @@ namespace pathtracer
 
 		Diffuse diffuse(hit.material->m_color);
 		BRDF & mat = diffuse;
+
+
+		//Task 2: shadows
+		Ray lightRay;
+		lightRay.o = hit.position + EPSILON * hit.geometry_normal;
+		lightRay.d = normalize(point_light.position - lightRay.o);
+
+		if (occluded(lightRay)){
+			return vec3(0.0);
+		}
+		
 		///////////////////////////////////////////////////////////////////
 		// Calculate Direct Illumination from light.
 		///////////////////////////////////////////////////////////////////
