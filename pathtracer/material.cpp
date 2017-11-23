@@ -26,10 +26,25 @@ namespace pathtracer
 	// A Blinn Phong Dielectric Microfacet BRFD
 	///////////////////////////////////////////////////////////////////////////
 	vec3 BlinnPhong::refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
-		return vec3(0.0f);
+		vec3 wh = normalize(wi + wo);
+		float F_wi = R0 + (1 - R0)*pow(1 - dot(wh, wi), 5);
+		if (refraction_layer == NULL){
+			return vec3(0.0f);
+		}
+		return vec3((1-F_wi)*refraction_layer->f(wi, wo, n));
 	}
 	vec3 BlinnPhong::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
-		return vec3(0.0f);
+		vec3 wh = normalize(wi + wo);
+		if (length(wo) == 0 || dot(wi, n) < 0 || dot(wo, n) < 0){
+			return vec3(0.0f);
+		}
+
+		float F_wi = R0 + (1 - R0)*pow(1 - dot(wh, wi), 5);
+		float D_wh = (shininess + 2) / (2 * M_PI) * pow(dot(n, wh), shininess);
+		float G_wiwo = min(1.0f, min(2 * dot(n, wh)*dot(n, wo) / dot(wo, wh), 2 * dot(n, wh)*dot(n, wi) / dot(wo, wh)));
+
+		return vec3(F_wi*D_wh*G_wiwo / (4 * dot(n, wo)*dot(n, wi)));
+
 	}
 
 	vec3 BlinnPhong::f(const vec3 & wi, const vec3 & wo, const vec3 & n) {

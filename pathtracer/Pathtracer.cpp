@@ -71,9 +71,11 @@ namespace pathtracer
 		// sample directions. 
 		///////////////////////////////////////////////////////////////////
 
-		Diffuse diffuse(hit.material->m_color);
-		BRDF & mat = diffuse;
 
+		//Task 3: ping-pong
+		Diffuse diffuse(hit.material->m_color);
+		BlinnPhong dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
+		BRDF & mat = dielectric;
 
 		//Task 2: shadows
 		Ray lightRay;
