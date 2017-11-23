@@ -120,7 +120,13 @@ namespace pathtracer
 				// Create a ray that starts in the camera position and points toward
 				// the current pixel on a virtual screen. 
 				vec2 screenCoord = vec2(float(x) / float(rendered_image.width), float(y) / float(rendered_image.height));
+				
+				//Task 1: introduce some randomness and jittering
+				screenCoord.x += (pathtracer::randf() -0.5) / rendered_image.width;
+				screenCoord.y += (pathtracer::randf() - 0.5) / rendered_image.height;
+		
 				primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+				
 				// Intersect ray with scene
 				if (intersect(primaryRay)) {
 					// If it hit something, evaluate the radiance from that point
