@@ -71,7 +71,7 @@ Ps 0.125
 Pr 25000
 Ke 0.469 0.469 0.469
 Tf 0 0 0
-map_Ke ../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/tvTestCard.jpg
+map_Ke ../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/tvTestCard.jpg
 newmtl TV_OuterCylinder
 Kd 0.333333 0.333333 0.333333
 Ks 1 1 1

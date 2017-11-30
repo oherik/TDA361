@@ -72,37 +72,26 @@ namespace pathtracer
 			if (dot(wo, n) <= 0.0f){
 				return vec3(0.0f);
 			}
-
 			float p_wh = (shininess + 1.0f)*(pow(dot(n, wh), shininess)) / (2.0f * M_PI);
-			float asd = 4.0f * dot(wo, wh);
-			if (asd < EPSILON){
+			float den = 4.0f * dot(wo, wh);
+			if (den < EPSILON){
 				return vec3(0.0f);
 			}
-			p = p_wh / asd;
-
+			p = p_wh / den;
 			p *= 0.5f;
-
-			wi = normalize(reflect(-normalize(wo),normalize(wh)));
-			
+			wi = normalize(reflect(-normalize(wo),normalize(wh)));	
 			return reflection_brdf(wi, wo, n);
 		}
 		else {
 			if (refraction_layer == NULL){
 				return vec3(0.0f);
 			}
-
-			vec3 brdf = refraction_layer->sample_wi(wi, wo, n, p);
-			
+			vec3 brdf = refraction_layer->sample_wi(wi, wo, n, p);	
 			p *= 0.5f;
 			vec3 wh = normalize(wo + wi);
-			float F = R0 + (1.0f - R0) * pow(1.0f - abs(dot(wh, wi)), 5.0f);
-			
+			float F = R0 + (1.0f - R0) * pow(1.0f - abs(dot(wh, wi)), 5.0f);	
 			return (1 - F) * brdf;
 		}
-		
-		
-
-		
 
 		/*
 
@@ -138,6 +127,41 @@ namespace pathtracer
 	}
 
 	vec3 LinearBlend::sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {
+		if (randf() < w){
+			vec3 tangent = normalize(perpendicular(n));
+			vec3 bitangent = normalize(cross(tangent, n));
+			float phi = 2.0f * M_PI * randf();
+			float cos_theta = pow(randf(), 1.0f / (w + 1.0f));
+			float sin_theta = sqrt(max(0.0f, 1.0f - cos_theta * cos_theta));
+			vec3 wh = normalize(sin_theta * cos(phi) * tangent +
+				sin_theta * sin(phi) * bitangent +
+				cos_theta * n);
+			if (dot(wo, n) <= 0.0f){
+				return vec3(0.0f);
+			}
+			float p_wh = (w + 1.0f)*(pow(dot(n, wh), w)) / (2.0f * M_PI);
+			float den = 4.0f * dot(wo, wh);
+			if (den < EPSILON){
+				return vec3(0.0f);
+			}
+			p = p_wh / den;
+			p *= 0.5f;
+			wi = normalize(reflect(-normalize(wo), normalize(wh)));
+			return reflection_brdf(wi, wo, n);
+		}
+		else {
+			if (refraction_layer == NULL){
+				return vec3(0.0f);
+			}
+			vec3 brdf = refraction_layer->sample_wi(wi, wo, n, p);
+			p *= 0.5f;
+			vec3 wh = normalize(wo + wi);
+			float F = R0 + (1.0f - R0) * pow(1.0f - abs(dot(wh, wi)), 5.0f);
+			return (1 - F) * brdf;
+		}
+
+		
+		
 		p = 0.0f; 
 		return vec3(0.0f);
 	}

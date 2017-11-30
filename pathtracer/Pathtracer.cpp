@@ -72,7 +72,11 @@ namespace pathtracer
 			// Create a material tree
 			Diffuse diffuse(hit.material->m_color);
 			BlinnPhong dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
-			BRDF & mat = dielectric;
+			BlinnPhongMetal metal(hit.material->m_color, hit.material->m_shininess,
+				hit.material->m_fresnel);
+			LinearBlend metal_blend(hit.material->m_metalness, &metal, &dielectric);
+			LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);
+			BRDF & mat = reflectivity_blend;
 
 			// Calculate Direct Illumination from light.
 			const float distance_to_light = length(point_light.position - hit.position);
