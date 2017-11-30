@@ -59,13 +59,72 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	vec3 Li(Ray & primary_ray) {
 		vec3 L = vec3(0.0f);
-		vec3 path_throughput = vec3(1.0);
+		vec3 path_throughput = vec3(1.0f);
 		Ray current_ray = primary_ray;
+
+
+		//Task 5: bounce it up
+		for (int i = 0; i < settings.max_bounces; i++){
+
+			// Get the intersection information from the ray
+			Intersection hit = getIntersection(current_ray);
+
+			// Create a material tree
+			Diffuse diffuse(hit.material->m_color);
+			BlinnPhong dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
+			BRDF & mat = dielectric;
+
+			// Calculate Direct Illumination from light.
+			const float distance_to_light = length(point_light.position - hit.position);
+			const float falloff_factor = 1.0f / (distance_to_light*distance_to_light);
+			Ray lightRay(hit.position + EPSILON * hit.geometry_normal, normalize(point_light.position - hit.position), 0.0f, distance_to_light);
+
+			if (!occluded(lightRay)){
+				vec3 Li = point_light.intensity_multiplier * point_light.color * falloff_factor;
+				vec3 wi = normalize(point_light.position - hit.position);
+				L = L + path_throughput * (mat.f(wi, hit.wo, hit.shading_normal) * Li * std::max(0.0f, dot(wi, hit.shading_normal)));
+			}
+
+			// Emitted radiance from intersection
+			L = L + path_throughput * hit.material->m_emission;
+
+			// Sample incoming direction
+			vec3 wi = vec3(0.0f);
+			float pdf = 0.0f;
+			vec3 brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
+
+			if (pdf < EPSILON) return L;
+			
+			float cosineTerm = abs(dot(wi, hit.shading_normal));
+
+			path_throughput = path_throughput * (brdf * cosineTerm) / pdf;
+
+			//Break if the throughput is 0
+			if (length(path_throughput) < EPSILON)
+			{
+				return L;
+			}
+			
+			//Next ray
+			current_ray.o = hit.position + EPSILON * hit.geometry_normal;
+			current_ray.d = wi;
+
+
+			//Intersect the new ray
+			if (!intersect(current_ray)){
+				return L + path_throughput * Lenvironment(current_ray.d);
+			}
+
+		}
+
+		/*
+
 
 		///////////////////////////////////////////////////////////////////
 		// Get the intersection information from the ray
 		///////////////////////////////////////////////////////////////////
 		Intersection hit = getIntersection(current_ray);
+
 		///////////////////////////////////////////////////////////////////
 		// Create a Material tree for evaluating brdfs and calculating
 		// sample directions. 
@@ -75,7 +134,14 @@ namespace pathtracer
 		//Task 3: ping-pong
 		Diffuse diffuse(hit.material->m_color);
 		BlinnPhong dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
-		BRDF & mat = dielectric;
+
+		//Task 4: Metal
+		BlinnPhongMetal metal(hit.material->m_color, hit.material->m_shininess, hit.material->m_fresnel);
+		LinearBlend metal_blend(hit.material->m_metalness, &metal, &dielectric);
+		LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);
+
+
+		BRDF & mat = reflectivity_blend;
 
 		//Task 2: shadows
 		Ray lightRay;
@@ -97,6 +163,7 @@ namespace pathtracer
 			L = mat.f(wi, hit.wo, hit.shading_normal) * Li * std::max(0.0f, dot(wi, hit.shading_normal));
 		}
 		// Return the final outgoing radiance for the primary ray
+		*/
 		return L;
 	}
 
