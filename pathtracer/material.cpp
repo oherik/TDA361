@@ -59,7 +59,7 @@ namespace pathtracer
 	}
 
 	vec3 BlinnPhong::sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {
-		/*
+		
 		if (randf() < 0.5){
 			vec3 tangent = normalize(perpendicular(n));
 			vec3 bitangent = normalize(cross(tangent, n));
@@ -100,11 +100,11 @@ namespace pathtracer
 			return (1 - F) * brdf;
 		}
 		
-		*/
+		
 
 		
 
-
+		/*
 
 
 		vec3 tangent = normalize(perpendicular(n));
@@ -114,7 +114,7 @@ namespace pathtracer
 		if (dot(wi, n) <= 0.0f) p = 0.0f;
 		else p = max(0.0f, dot(n, wi)) / M_PI;
 		return f(wi, wo, n); 
-		
+		*/
 		
 	}
 

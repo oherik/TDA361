@@ -1,17 +1,17 @@
 # Exported by Chalmers Graphics Group
 newmtl Floor
 Kd 0.494118 0.459239 0.459239
-Ks 0 0 0
+Ks 0.473 0.473 0.473
 Pm 0
 Ps 0
 Pr 101.626
 Ke 0 0 0
 Tf 0 0 0
 newmtl MiddlePLates
-Kd 0 0 0
+Kd 0.544118 0.128028 0.128028
 Ks 1 1 1
 Pm 0
-Ps 0.348
+Ps 0.364
 Pr 25000
 Ke 0 0 0
 Tf 0 0 0
@@ -71,7 +71,7 @@ Ps 0.125
 Pr 25000
 Ke 0.469 0.469 0.469
 Tf 0 0 0
-map_Ke ../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/tvTestCard.jpg
+map_Ke ../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/../scenes/tvTestCard.jpg
 newmtl TV_OuterCylinder
 Kd 0.333333 0.333333 0.333333
 Ks 1 1 1

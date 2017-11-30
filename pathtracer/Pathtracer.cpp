@@ -89,7 +89,7 @@ namespace pathtracer
 			L = L + path_throughput * hit.material->m_emission;
 
 			// Sample incoming direction
-			vec3 wi = vec3(0.0f);
+			vec3 wi;
 			float pdf = 0.0f;
 			vec3 brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
 
@@ -106,9 +106,7 @@ namespace pathtracer
 			}
 			
 			//Next ray
-			current_ray.o = hit.position + EPSILON * hit.geometry_normal;
-			current_ray.d = wi;
-
+			current_ray = Ray(hit.position + EPSILON * hit.geometry_normal, wi);
 
 			//Intersect the new ray
 			if (!intersect(current_ray)){
