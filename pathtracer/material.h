@@ -20,6 +20,19 @@ namespace pathtracer
 		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) = 0;
 	};
 
+
+	class Transparent : public BRDF
+	{
+	public:
+
+		float transparency;
+		vec3 color;
+		Transparent(float _transparency, vec3 _color) :
+			transparency(_transparency), color(_color) {}
+		virtual vec3 f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
+		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+	};
+
 	///////////////////////////////////////////////////////////////////////////
 	// A Lambertian (diffuse) material
 	///////////////////////////////////////////////////////////////////////////

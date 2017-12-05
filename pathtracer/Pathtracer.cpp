@@ -65,18 +65,30 @@ namespace pathtracer
 
 		//Task 5: bounce it up
 		for (int i = 0; i < settings.max_bounces; i++){
-
+			
 			// Get the intersection information from the ray
 			Intersection hit = getIntersection(current_ray);
 
 			// Create a material tree
 			Diffuse diffuse(hit.material->m_color);
+			Transparent transparent(hit.material->m_transparency, hit.material->m_color);
+
+
 			BlinnPhong dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
 			BlinnPhongMetal metal(hit.material->m_color, hit.material->m_shininess,
 				hit.material->m_fresnel);
 			LinearBlend metal_blend(hit.material->m_metalness, &metal, &dielectric);
 			LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);
-			BRDF & mat = reflectivity_blend;
+	
+			
+			
+			
+				BRDF & mat= transparent;
+			
+			
+
+
+			
 
 			// Calculate Direct Illumination from light.
 			const float distance_to_light = length(point_light.position - hit.position);
@@ -110,7 +122,12 @@ namespace pathtracer
 			}
 			
 			//Next ray
-			current_ray = Ray(hit.position + EPSILON * hit.geometry_normal, wi);
+			if (dot(hit.shading_normal, wi) > 0.0f){
+				current_ray = Ray(hit.position + EPSILON * hit.geometry_normal, wi);
+			}
+			else {
+				current_ray = Ray(hit.position - EPSILON * hit.geometry_normal, wi);
+			}
 
 			//Intersect the new ray
 			if (!intersect(current_ray)){

@@ -23,12 +23,61 @@ namespace pathtracer
 	}
 
 	///////////////////////////////////////////////////////////////////////////
+	// Refract yo
+	///////////////////////////////////////////////////////////////////////////
+	vec3 Transparent::f(const vec3 & wi, const vec3 & wo, const vec3 & n) {
+		return vec3(0.0f);
+		//if (dot(wi, n) <= 0.0f) return vec3(0.0f);
+		//if (!sameHemisphere(wi, wo, n)) return vec3(0.0f);
+
+		//float index = 1.52f; //TODO: this is for windows glass
+		//float w = index*dot(n, wo);
+		//float k = sqrt(1.0f + (w - index) * (w + index));
+		//vec3 t = (w - k)*n - index * wo;
+
+		//float d = 1.0f; //TODO: thickness
+		//transparency = max(transparency, EPSILON);
+		//float a = -log(transparency) / d;
+
+
+
+		//return diffuse_layer->f(wi, wo, n) * a;
+
+	}
+
+	vec3 Transparent::sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {
+		vec3 L = wo;
+		if (dot(L,n) > 0.0f){
+			float n1 = 1.0;
+			float n2 = 1.22f;
+			float index = n1/n2; //TODO: this is for windows glass
+			float w = index*dot(L, n);
+			float k = sqrt(1.0f + (w - index) * (w + index));
+
+			wi =  (w - k)*n - index * L;
+			p = 1.0f;
+			float cosineTerm = abs(dot(wi, n)); // FÖr att bli av med den i senare uträkning och slippa mörk rand
+			return vec3(1.0) / cosineTerm; // f(wi, wo, n);
+		}
+		else {
+			
+
+			wi =-wo;
+			p = 1.0f;
+
+			float cosineTerm = abs(dot(wi, n)); // FÖr att bli av med den i senare uträkning och slippa mörk rand
+			return vec3(1.0) / cosineTerm; // f(wi, wo, n);
+		}
+	}
+
+	///////////////////////////////////////////////////////////////////////////
 	// A Blinn Phong Dielectric Microfacet BRFD
 	///////////////////////////////////////////////////////////////////////////
 	vec3 BlinnPhong::refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
 		vec3 wh = normalize(wi + wo);
 		float F_wi = R0 + (1 - R0)*pow(1 - dot(wh, wi), 5);
 		if (refraction_layer == NULL){
+			printf("hej");
 			return vec3(0.0f);
 		}
 		return vec3((1-F_wi)*refraction_layer->f(wi, wo, n));
@@ -84,6 +133,7 @@ namespace pathtracer
 		}
 		else {
 			if (refraction_layer == NULL){
+				printf("ye");
 				return vec3(0.0f);
 			}
 			vec3 brdf = refraction_layer->sample_wi(wi, wo, n, p);	
