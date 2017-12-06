@@ -66,7 +66,7 @@ namespace pathtracer
 		else {
 			//Strålen lämnar materialet
 			//TODO: räkna ut färgens påverkan
-			n_new = -n;
+			vec3 n_new = -n;
 			float n1 = 1.22f;
 			float n2 = 1.0;
 			float index = n1/n2; //TODO: this is for windows glass
