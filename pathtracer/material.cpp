@@ -47,26 +47,42 @@ namespace pathtracer
 
 	vec3 Transparent::sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {
 		vec3 L = wo;
+		
+		
 		if (dot(L,n) > 0.0f){
+			// Strålen på väg in i materialet
 			float n1 = 1.0;
 			float n2 = 1.22f;
 			float index = n1/n2; //TODO: this is for windows glass
 			float w = index*dot(L, n);
+			
 			float k = sqrt(1.0f + (w - index) * (w + index));
 
 			wi =  (w - k)*n - index * L;
 			p = 1.0f;
-			float cosineTerm = abs(dot(wi, n)); // F�r att bli av med den i senare utr�kning och slippa m�rk rand
-			return vec3(1.0) / cosineTerm; // f(wi, wo, n);
+			float cosineTerm = abs(dot(wi, n)); // För att bli av med den i senare uträkning och slippa mörk rand
+			return vec3(1.0) / cosineTerm; 
 		}
 		else {
+			//Strålen lämnar materialet
+			//TODO: räkna ut färgens påverkan
+			n_new = -n;
+			float n1 = 1.22f;
+			float n2 = 1.0;
+			float index = n1/n2; //TODO: this is for windows glass
+			float w = index*dot(L, n_new);
+			float k_t = 1.0f + (w - index) * (w + index);
+			if (k_t < 0) { // we've got TIR, baby
+				wi = reflect(L,n_new);
+			} else {
+				float k = sqrt(k_t);
+				wi =  (w - k)*n_new - index * L;
+			}
 			
-
-			wi =-wo;
 			p = 1.0f;
 
-			float cosineTerm = abs(dot(wi, n)); // F�r att bli av med den i senare utr�kning och slippa m�rk rand
-			return vec3(1.0) / cosineTerm; // f(wi, wo, n);
+			float cosineTerm = abs(dot(wi, n)); // För att bli av med den i senare uträkning och slippa mörk rand
+			return vec3(1.0) / cosineTerm; 
 		}
 	}
 
