@@ -168,12 +168,16 @@ namespace pathtracer
 		
 		
 		//Guld
-		float n_m []= { 0.42415f, 0.15557f,1.3831f };
-		float k_m [] = { 2.4721f, 3.6024f,1.9155f };
+		float n_m []= { 0.15557f, 0.42415f,1.3831f };
+		float k_m [] = { 3.6024f, 2.4721f,1.9155f };
 
 		//Aluminium
 		//float n_m[] = { 1.5580f, 1.0152f, 0.63324f };
 		//float k_m[] = { 7.7124f, 6.6273f, 5.4544f };
+
+		//Platina
+		//float n_m[] = { 0.040000f, 0.059582f, 0.052225f };
+		//float k_m[] = { 2.6484f,  3.5974f, 4.4094f };
 
 		std::complex<float> c1(n_m[0], k_m[0]);
 		std::complex<float> c2(n_m[1], k_m[1]);
