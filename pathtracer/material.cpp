@@ -1,5 +1,6 @@
 #include "material.h"
 #include "sampling.h"
+#include <complex>
 
 namespace pathtracer
 {
@@ -27,22 +28,6 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	vec3 Transparent::f(const vec3 & wi, const vec3 & wo, const vec3 & n) {
 		return vec3(0.0f);
-		//if (dot(wi, n) <= 0.0f) return vec3(0.0f);
-		//if (!sameHemisphere(wi, wo, n)) return vec3(0.0f);
-
-		//float index = 1.52f; //TODO: this is for windows glass
-		//float w = index*dot(n, wo);
-		//float k = sqrt(1.0f + (w - index) * (w + index));
-		//vec3 t = (w - k)*n - index * wo;
-
-		//float d = 1.0f; //TODO: thickness
-		//transparency = max(transparency, EPSILON);
-		//float a = -log(transparency) / d;
-
-
-
-		//return diffuse_layer->f(wi, wo, n) * a;
-
 	}
 
 	vec3 Transparent::sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {
@@ -52,7 +37,7 @@ namespace pathtracer
 		if (dot(L,n) > 0.0f){
 			// Strålen på väg in i materialet
 			float n1 = 1.0;
-			float n2 = 1.22f;
+			float n2 = 1.52f;
 			float index = n1/n2; //TODO: this is for windows glass
 			float w = index*dot(L, n);
 			
@@ -65,9 +50,8 @@ namespace pathtracer
 		}
 		else {
 			//Strålen lämnar materialet
-			//TODO: räkna ut färgens påverkan
 			vec3 n_new = -n;
-			float n1 = 1.22f;
+			float n1 = 1.52f;
 			float n2 = 1.0;
 			float index = n1/n2; //TODO: this is for windows glass
 			float w = index*dot(L, n_new);
@@ -93,7 +77,6 @@ namespace pathtracer
 		vec3 wh = normalize(wi + wo);
 		float F_wi = R0 + (1 - R0)*pow(1 - dot(wh, wi), 5);
 		if (refraction_layer == NULL){
-			printf("hej");
 			return vec3(0.0f);
 		}
 		return vec3((1-F_wi)*refraction_layer->f(wi, wo, n));
@@ -149,7 +132,6 @@ namespace pathtracer
 		}
 		else {
 			if (refraction_layer == NULL){
-				printf("ye");
 				return vec3(0.0f);
 			}
 			vec3 brdf = refraction_layer->sample_wi(wi, wo, n, p);	
@@ -180,8 +162,80 @@ namespace pathtracer
 		return vec3(0.0f); 
 	}
 	vec3 BlinnPhongMetal::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) { 
-		return BlinnPhong::reflection_brdf(wi, wo, n) * color; 
+		float n_m []= { 0.294f, 1.0697f, 1.2404f };
+		float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
+		
+		std::complex<float> c1(n_m[0], k_m[0]);
+		std::complex<float> c2(n_m[1], k_m[1]);
+		std::complex<float> c3(n_m[2], k_m[2]);
+
+		std::complex<float> c1_c = conj(c1);
+		std::complex<float> c2_c = conj(c2);
+		std::complex<float> c3_c = conj(c3);
+
+		float r0_1 = ((c1 - 1.0f)*(c1_c - 1.0f) / ((c1 + 1.0f)*(c1_c + 1.0f))).real();
+		float r0_2 = ((c2 - 1.0f)*(c2_c - 1.0f) / ((c2 + 1.0f)*(c2_c + 1.0f))).real();
+		float r0_3 = ((c3 - 1.0f)*(c3_c - 1.0f) / ((c3 + 1.0f)*(c3_c + 1.0f))).real();
+
+
+
+
+		// COpy
+		vec3 wh = normalize(wi + wo);
+
+		float whdotwi = max(0.0f, dot(wh, wi));
+		float ndotwh = max(0.0f, dot(n, wh));
+		float wodotwh = max(0.0f, dot(wo, wh));
+		float ndotwi = max(0.0f, dot(n, wi));
+		float ndotwo = max(0.0f, dot(n, wo));
+
+
+		float F_wi_1 = r0_1 + (1.0f - r0_1)*pow(1.0f - whdotwi, 5.0f);
+		float F_wi_2 = r0_2 + (1.0f - r0_2)*pow(1.0f - whdotwi, 5.0f);
+		float F_wi_3 = r0_3 + (1.0f - r0_3)*pow(1.0f - whdotwi, 5.0f);
+
+
+
+
+		float F_wi_snitt = (F_wi_1 + F_wi_2 + F_wi_3) / 3;
+
+		float D_wh = (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
+		float G_wiwo = min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
+
+		float den = (4.0f * ndotwo*ndotwi);
+
+		if (den < EPSILON) return vec3(0.0f);
+
+
+
+		return vec3(F_wi_snitt*D_wh*G_wiwo / den);
+
+
+
+		//return BlinnPhong::reflection_brdf(wi, wo, n) * color; 
 	};
+
+	///////////////////////////////////////////////////////////////////////////
+	// A Transparency Blend between two BRDFs
+	///////////////////////////////////////////////////////////////////////////
+	vec3 TransparencyBlend::f(const vec3 & wi, const vec3 & wo, const vec3 & n) {
+		vec3 sample = transparency->f(wi, wo, n);
+		return sample * a + color * (1.0f - a);
+	}
+
+	vec3 TransparencyBlend::sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {
+		if (randf() < a){
+			vec3 brdf = transparency->sample_wi(wi, wo, n, p);
+			p = p * a;
+			return brdf;
+		}
+		else {
+			vec3 brdf = transparency->sample_wi(wi, wo, n, p);
+			p = p * (1 - a);
+			float cosineTerm = abs(dot(wi, n)); // För att bli av med den i senare uträkning och slippa mörk rand
+			return color / cosineTerm;
+		}
+	}
 
 	///////////////////////////////////////////////////////////////////////////
 	// A Linear Blend between two BRDFs

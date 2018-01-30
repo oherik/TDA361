@@ -61,7 +61,7 @@ namespace pathtracer
 		vec3 L = vec3(0.0f);
 		vec3 path_throughput = vec3(1.0f);
 		Ray current_ray = primary_ray;
-
+		vec3 last_position = vec3(0.0f);
 
 		//Task 5: bounce it up
 		for (int i = 0; i < settings.max_bounces; i++){
@@ -73,22 +73,39 @@ namespace pathtracer
 			Diffuse diffuse(hit.material->m_color);
 			Transparent transparent(hit.material->m_transparency, hit.material->m_color);
 
+			//Calculate opacity
+			float dist = (length(hit.position - last_position));
+			float a_c = -log(hit.material->m_transparency);
+			float exp = -a_c*dist;
+			float T = pow(2.72, exp);
+			float a = 0.0f;
+			if (dot(hit.shading_normal, current_ray.d) < 0.0f){
+				a = 1.0f;
+			}
+			else {
+				if (hit.material->m_transparency < EPSILON){
+					a = 0.0f;
+				}
+				else {
+					a = T;
+				}
+				//float a_new = 10*(hit.material->m_transparency)/dist; // /5 is a bit arbitrary
+				//a = T;// fmin(1.0f, a_new);
+			}
 
+			TransparencyBlend transparency_blend(a, &transparent, hit.material->m_color);
 			BlinnPhong dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
 			BlinnPhongMetal metal(hit.material->m_color, hit.material->m_shininess,
 				hit.material->m_fresnel);
 			LinearBlend metal_blend(hit.material->m_metalness, &metal, &dielectric);
 			LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);
-	
+			LinearBlend transparency_blend_final(hit.material->m_transparency, &transparency_blend, &reflectivity_blend);
 			
 			
-			
-				BRDF & mat= transparent;
-			
-			
+			BRDF & mat = metal;
 
-
-			
+			// Update last hit position for the next distance calculation
+			last_position = vec3(hit.position);
 
 			// Calculate Direct Illumination from light.
 			const float distance_to_light = length(point_light.position - hit.position);

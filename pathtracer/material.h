@@ -88,4 +88,20 @@ namespace pathtracer
 		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override; 
 	};
 
+
+	///////////////////////////////////////////////////////////////////////////
+	// A Transparency Blend 
+	///////////////////////////////////////////////////////////////////////////
+
+	class TransparencyBlend : public BRDF
+	{
+	public:
+		float a;
+		BRDF * transparency;
+		vec3 color;
+		TransparencyBlend(float _a, BRDF * _transparency, vec3 _color) : a(_a), transparency(_transparency), color(_color) {};
+		virtual vec3 f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
+		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+	};
+
 }
