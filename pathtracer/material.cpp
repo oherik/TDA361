@@ -162,9 +162,22 @@ namespace pathtracer
 		return vec3(0.0f); 
 	}
 	vec3 BlinnPhongMetal::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) { 
-		float n_m []= { 0.294f, 1.0697f, 1.2404f };
-		float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
+		//Koppar
+		//float n_m []= { 0.294f, 1.0697f, 1.2404f };
+		//float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
 		
+		//Krom
+		//float n_m []= { 2.3230f, 3.1812f, 3.1071f };
+		//float k_m [] = { 3.1350f, 3.3291f, 3.3314f };
+		
+		//Silver
+		//float n_m []= { 0.040000f, 0.059582f,0.052225f };
+		//float k_m [] = { 2.6484f, 3.5974f, 4.4094f };
+
+		//Aluminium
+		float n_m[] = { 1.5580f, 1.0152f, 0.63324f };
+		float k_m[] = { 7.7124f, 6.6273f, 5.4544f };
+
 		std::complex<float> c1(n_m[0], k_m[0]);
 		std::complex<float> c2(n_m[1], k_m[1]);
 		std::complex<float> c3(n_m[2], k_m[2]);
@@ -194,10 +207,25 @@ namespace pathtracer
 		float F_wi_2 = r0_2 + (1.0f - r0_2)*pow(1.0f - whdotwi, 5.0f);
 		float F_wi_3 = r0_3 + (1.0f - r0_3)*pow(1.0f - whdotwi, 5.0f);
 
+		float F_wi_tot = (F_wi_1 + F_wi_2 + F_wi_3);
+		float F_to_use = 0.0f;
+
+		vec3 color;
+
+		if (randf()*F_wi_tot < F_wi_1) {
+			F_to_use = F_wi_1;
+			color = vec3(1.0f, 0, 0);
+		}
+		else if (randf()*F_wi_tot < F_wi_1+F_wi_2) {
+			F_to_use = F_wi_2;
+			color = vec3(0, 1.0f, 0);
+		}
+		else {
+			F_to_use = F_wi_3;
+			color = vec3(0, 0, 1.0f);
+		}
 
 
-
-		float F_wi_snitt = (F_wi_1 + F_wi_2 + F_wi_3) / 3;
 
 		float D_wh = (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
 		float G_wiwo = min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
@@ -208,7 +236,7 @@ namespace pathtracer
 
 
 
-		return vec3(F_wi_snitt*D_wh*G_wiwo / den);
+		return vec3(F_to_use*D_wh*G_wiwo / den)*color;
 
 
 
