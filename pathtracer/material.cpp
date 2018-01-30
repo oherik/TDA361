@@ -166,17 +166,14 @@ namespace pathtracer
 		//float n_m []= { 0.294f, 1.0697f, 1.2404f };
 		//float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
 		
-		//Krom
-		//float n_m []= { 2.3230f, 3.1812f, 3.1071f };
-		//float k_m [] = { 3.1350f, 3.3291f, 3.3314f };
 		
-		//Silver
-		//float n_m []= { 0.040000f, 0.059582f,0.052225f };
-		//float k_m [] = { 2.6484f, 3.5974f, 4.4094f };
+		//Guld
+		float n_m []= { 0.42415f, 0.15557f,1.3831f };
+		float k_m [] = { 2.4721f, 3.6024f,1.9155f };
 
 		//Aluminium
-		float n_m[] = { 1.5580f, 1.0152f, 0.63324f };
-		float k_m[] = { 7.7124f, 6.6273f, 5.4544f };
+		//float n_m[] = { 1.5580f, 1.0152f, 0.63324f };
+		//float k_m[] = { 7.7124f, 6.6273f, 5.4544f };
 
 		std::complex<float> c1(n_m[0], k_m[0]);
 		std::complex<float> c2(n_m[1], k_m[1]);
@@ -236,7 +233,7 @@ namespace pathtracer
 
 
 
-		return vec3(F_to_use*D_wh*G_wiwo / den)*color;
+		return vec3((F_wi_1*vec3(1.0f, 0, 0)+ F_wi_2*vec3(0, 1.0f, 0)+ F_wi_3*vec3(0, 0, 1.0f))*D_wh*G_wiwo / den);
 
 
 
