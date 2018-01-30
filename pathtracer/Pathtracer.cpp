@@ -99,6 +99,7 @@ namespace pathtracer
 				hit.material->m_fresnel);
 			LinearBlend metal_blend(hit.material->m_metalness, &metal, &dielectric);
 			LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);
+
 			LinearBlend transparency_blend_final(hit.material->m_transparency, &transparency_blend, &reflectivity_blend);
 			
 			
@@ -106,6 +107,7 @@ namespace pathtracer
 
 			// Update last hit position for the next distance calculation
 			last_position = vec3(hit.position);
+
 
 			// Calculate Direct Illumination from light.
 			const float distance_to_light = length(point_light.position - hit.position);
