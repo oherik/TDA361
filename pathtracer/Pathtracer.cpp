@@ -79,16 +79,8 @@ namespace pathtracer
 				hit.material->m_fresnel);
 			LinearBlend metal_blend(hit.material->m_metalness, &metal, &dielectric);
 			LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);
-	
 			
-			
-			
-				BRDF & mat= transparent;
-			
-			
-
-
-			
+            BRDF & mat= transparent;
 
 			// Calculate Direct Illumination from light.
 			const float distance_to_light = length(point_light.position - hit.position);
