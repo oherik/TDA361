@@ -161,15 +161,35 @@ namespace pathtracer
 	vec3 BlinnPhongMetal::refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) { 
 		return vec3(0.0f); 
 	}
+
+	float f1(float n, float k, float cost) {
+		return( 0.5*(
+
+				(pow(n,2.0f) + pow(k,2.0f) - 2 * n * cost + pow(cost,2) )/
+				(pow(n, 2.0f) + pow(k, 2.0f) + 2 * n * cost + pow(cost, 2)) +
+			
+			((pow(n, 2.0f) + pow(k, 2.0f))*pow(cost,2.0f)-2*n*cost+1) /
+			((pow(n, 2.0f) + pow(k, 2.0f))*pow(cost, 2.0f) + 2 * n*cost + 1)
+			 
+			));
+	}
+
+	float net(float r, float g) {
+		return g * (1.0f - r) / (1.0f - r) + (1.0f - g)  * (1.0f - sqrt(r)) / (1.0f - sqrt(r));
+	}
+	float ket(float r, float g) {
+		return sqrt(1.0 / (1.0 - r) * r * (pow((net(r, g) + 1), 2.0f) - pow(net(r, g) - 1, 2.0f)));
+	}
+
 	vec3 BlinnPhongMetal::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) { 
 		//Koppar
 		//float n_m []= { 0.294f, 1.0697f, 1.2404f };
-		//float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
+	//float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
 		
 		
 		//Guld
-		float n_m []= { 0.15557f, 0.42415f,1.3831f };
-		float k_m [] = { 3.6024f, 2.4721f,1.9155f };
+		//float n_m []= { 0.15557f, 0.42415f,1.3831f };
+		//float k_m [] = { 3.6024f, 2.4721f,1.9155f };
 
 		//Aluminium
 		//float n_m[] = { 1.5580f, 1.0152f, 0.63324f };
@@ -178,6 +198,10 @@ namespace pathtracer
 		//Platina
 		//float n_m[] = { 0.040000f, 0.059582f, 0.052225f };
 		//float k_m[] = { 2.6484f,  3.5974f, 4.4094f };
+
+		//jadu
+		float n_m []= { 1.0f, 1.0f,1.0f };
+		float k_m [] = { 1.0f, 1.0f,0.1f };
 
 		std::complex<float> c1(n_m[0], k_m[0]);
 		std::complex<float> c2(n_m[1], k_m[1]);
@@ -191,9 +215,6 @@ namespace pathtracer
 		float r0_2 = ((c2 - 1.0f)*(c2_c - 1.0f) / ((c2 + 1.0f)*(c2_c + 1.0f))).real();
 		float r0_3 = ((c3 - 1.0f)*(c3_c - 1.0f) / ((c3 + 1.0f)*(c3_c + 1.0f))).real();
 
-
-
-
 		// COpy
 		vec3 wh = normalize(wi + wo);
 
@@ -203,21 +224,32 @@ namespace pathtracer
 		float ndotwi = max(0.0f, dot(n, wi));
 		float ndotwo = max(0.0f, dot(n, wo));
 
+		float cost = abs(dot(wi, n) / (n.length()*wi.length()));
 
-		float F_wi_1 = r0_1 + (1.0f - r0_1)*pow(1.0f - whdotwi, 5.0f);
-		float F_wi_2 = r0_2 + (1.0f - r0_2)*pow(1.0f - whdotwi, 5.0f);
-		float F_wi_3 = r0_3 + (1.0f - r0_3)*pow(1.0f - whdotwi, 5.0f);
+
+		float ret[] = { 0.0f, 0.4f,0.4f };
+		float g[] = { 0.0f, 1.0f,0.0f };
+
+
+
+		float F_wi_1 = f1(net(ret[0], g[0]), ket(ret[0], g[0]), cost); //n_m[0], k_m[0], cost);// r0_1 + (1.0f - r0_1)*pow(1.0f - whdotwi, 5.0f);
+		float F_wi_2 = f1(net(ret[1], g[1]), ket(ret[1], g[1]), cost);//r0_2 + (1.0f - r0_2)*pow(1.0f - whdotwi, 5.0f);
+		float F_wi_3 = f1(net(ret[2], g[2]), ket(ret[2], g[2]), cost);//r0_3 + (1.0f - r0_3)*pow(1.0f - whdotwi, 5.0f);
+
+
+		printf("%f     ", net(ret[0], g[0]));
+
 
 		float F_wi_tot = (F_wi_1 + F_wi_2 + F_wi_3);
 		float F_to_use = 0.0f;
 
 		vec3 color;
-
-		if (randf()*F_wi_tot < F_wi_1) {
+		float r = randf();
+		if (r*F_wi_tot < F_wi_1) {
 			F_to_use = F_wi_1;
 			color = vec3(1.0f, 0, 0);
 		}
-		else if (randf()*F_wi_tot < F_wi_1+F_wi_2) {
+		else if (r*F_wi_tot < F_wi_1+F_wi_2) {
 			F_to_use = F_wi_2;
 			color = vec3(0, 1.0f, 0);
 		}
@@ -225,7 +257,6 @@ namespace pathtracer
 			F_to_use = F_wi_3;
 			color = vec3(0, 0, 1.0f);
 		}
-
 
 
 		float D_wh = (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
@@ -237,7 +268,7 @@ namespace pathtracer
 
 
 
-		return vec3((F_wi_1*vec3(1.0f, 0, 0)+ F_wi_2*vec3(0, 1.0f, 0)+ F_wi_3*vec3(0, 0, 1.0f))*D_wh*G_wiwo / den);
+		return vec3(vec3(F_wi_1, F_wi_2, F_wi_3));// *D_wh*G_wiwo / den);
 
 
 
