@@ -7,8 +7,36 @@
 #include <iostream>
 #include <memory>
 #include <map>
+#include<stdio.h>
+#include<math.h>
+#include<time.h>
+#include<stdlib.h>
+#include<random>
+#include<omp.h>
 
 using namespace glm;
+
+///////////////////////////////////////////////////////////////////////////////
+// Get a random float. Note that we need one "generator" per thread, or we 
+// would need to lock everytime someone called randf(). 
+///////////////////////////////////////////////////////////////////////////////
+std::mt19937 generators[24]; // Assuming no more than 24 cores
+float randf() {
+    return float(generators[omp_get_thread_num()]() /
+        double(generators[omp_get_thread_num()].max()));
+}
+
+
+float exactReflection(float n, float k, float cost) {
+    return( 0.5*(
+
+            (pow(n,2.0f) + pow(k,2.0f) - 2 * n * cost + pow(cost,2) )/
+            (pow(n, 2.0f) + pow(k, 2.0f) + 2 * n * cost + pow(cost, 2)) +
+        
+        ((pow(n, 2.0f) + pow(k, 2.0f))*pow(cost,2.0f)-2*n*cost+1) /
+        ((pow(n, 2.0f) + pow(k, 2.0f))*pow(cost, 2.0f) + 2 * n*cost + 1)
+        ));
+}
 
 float rgToN(float r, float g) {
     return g * (1.0f - r) / (1.0f - r) + (1.0f - g)  * (1.0f - sqrt(r)) / (1.0f - sqrt(r));
@@ -60,7 +88,7 @@ int main() {
     float r0_3 = ((c3 - 1.0f)*(c3_c - 1.0f) / ((c3 + 1.0f)*(c3_c + 1.0f))).real();
 
     // Copy
-    float theta = 5.0f;
+    float theta = 0.08f;
     float angle = 0.0f;
     float shininess = 203.0f;
     float EPSILON = 0.00001f;
@@ -77,7 +105,7 @@ int main() {
 
 
 
-    while(angle<90.0f){
+    while(angle<(3.14f/2.0f)){
 
 
 
@@ -93,8 +121,8 @@ int main() {
         float cost = abs(dot(wi, n) / (n.length()*wi.length()));
 
 
-        vec3 rValues = m_r;
-        vec3 gValues = m_g ;
+        vec3 rValues = vec3(1.0f, 0.0f, 0.0f);
+        vec3 gValues = vec3(0.0f, 1.0f, 0.0f);
 
         //printf("%f      \n", rValues[0]);
 
@@ -130,22 +158,23 @@ int main() {
 
         float den = (4.0f * ndotwo*ndotwi);
 
-        if (den < EPSILON) return vec3(0.0f);
+        if (den < EPSILON) return 0;
 
         vec3 colors = (vec3(F_wi_1, F_wi_2, F_wi_3) *D_wh*G_wiwo) / den;
         //print res
         printf("angle: %f Red: %f Green: %f Blue: %f\n", angle, colors.x, colors.y, colors.z);
 
         //calc new wi value
+        angle += theta;
+
         vec3 C = normalize(cross(wi, witar));
         vec3 F = cross(C, wi);
         wi = cos(theta) * wi + sin(theta) * F;
-        angle += theta;
-        //calc new wi value
+
+        //calc new wo value
         C = normalize(cross(wo, wotar));
         F = cross(C, wo);
         wi = cos(theta) * wo + sin(theta) * F;
-
     }
     //return BlinnPhong::reflection_brdf(wi, wo, n) * color; 
 };
