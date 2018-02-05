@@ -27,6 +27,8 @@ namespace labhelper
 		glm::vec3	m_color;
 		glm::vec3	m_r;
 		glm::vec3	m_g;
+		glm::vec3	m_n;
+		glm::vec3	m_k;
 		float		m_reflectivity;
 		float		m_shininess;
 		float		m_metalness; 

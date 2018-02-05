@@ -87,7 +87,7 @@ namespace pathtracer
 		float whdotwi = max(0.0f, dot(wh, wi));
 		float ndotwh = max(0.0f, dot(n, wh));
 		float wodotwh = max(0.0f, dot(wo, wh));
-		float ndotwi = max(0.0f, dot(n, wi));
+		float ndotwi = max(0.0f , dot(n, wi));
 		float ndotwo = max(0.0f, dot(n, wo));
 
 		float F_wi = R0 + (1.0f - R0)*pow(1.0f - whdotwi, 5.0f);
@@ -174,15 +174,6 @@ namespace pathtracer
 			));
 	}
 
-	float rgToN(float r_val, float g_val) {
-		float r_fix = min(r_val, 0.99f);
-		return g_val * (1.0f - r_fix) / (1.0f + r_fix) + (1.0f - g_val)  * (1.0f + sqrt(r_fix)) / (1.0f - sqrt(r_fix));
-	}
-	float rgToK(float r_val, float g_val) {
-		float r_fix = min(r_val, 0.99f);
-		return sqrt(1.0f / (1.0f - r_fix) * r_fix * (pow((rgToN(r_fix, g_val) + 1.0f), 2.0f) - pow(rgToN(r_fix, g_val) - 1.0f, 2.0f)));
-	}
-
 	vec3 BlinnPhongMetal::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) { 
 		//Koppar
 		//float n_m []= { 0.294f, 1.0697f, 1.2404f };
@@ -202,8 +193,8 @@ namespace pathtracer
 		//float k_m[] = { 2.6484f,  3.5974f, 4.4094f };
 
 		//jadu
-		float n_m []= { 0.5f, 2.5f, 4.5f};
-		float k_m [] = { 1.0f, 2.0f,3.0f };
+		//float n_m []= { 9.0f, 7.0f, 4.5f};
+		//float k_m [] = { 5.0f, 4.3f, 3.4f };
 
 		vec3 wh = normalize(wi + wo);
 
@@ -215,12 +206,9 @@ namespace pathtracer
 
 		float cost = abs(dot(wi, n) / (n.length()*wi.length()));
 
-		vec3 rValues = m_r;
-		vec3 gValues = m_g ;
-
-		float F_wi_1 = exactReflection(n_m[0], k_m[0], cost);
-		float F_wi_2 = exactReflection(n_m[1], k_m[1], cost);
-		float F_wi_3 = exactReflection(n_m[2], k_m[2], cost);
+		float F_wi_1 = exactReflection(m_n[0], m_k[0], cost);
+		float F_wi_2 = exactReflection(m_n[1], m_k[1], cost);
+		float F_wi_3 = exactReflection(m_n[2], m_k[2], cost);
 
 		float D_wh = (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
 		float G_wiwo = min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
