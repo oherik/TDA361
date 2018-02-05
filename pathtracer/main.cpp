@@ -21,6 +21,7 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////////
 SDL_Window* g_window = nullptr;
 int windowWidth = 0, windowHeight = 0;
+vec3 tempR, tempG, tempN, tempK;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
@@ -224,6 +225,21 @@ bool handleEvents(void)
 	return quitEvent;
 }
 
+float rgToN(float r_val, float g_val) {
+	float r_fix = min(r_val, 1.0f - EPSILON);
+	return g_val * (1.0f - r_fix) / (1.0f + r_fix) + (1.0f - g_val)  * (1.0f + sqrt(r_fix)) / (1.0f - sqrt(r_fix));
+}
+float rgToK(float r_val, float g_val) {
+	float r_fix = min(r_val, 1.0f - EPSILON);
+	return sqrt(1.0f / (1.0f - r_fix) * r_fix * (pow((rgToN(r_fix, g_val) + 1.0f), 2.0f) - pow(rgToN(r_fix, g_val) - 1.0f, 2.0f)));
+}
+float nkToR(float n, float k) {
+	return (pow(n - 1.0f, 2.0f) + pow(k, 2.0f)) / (pow(n + 1.0, 2.0f) + pow(k, 2.0f));
+}
+float nkToG(float n, float k) {
+	return   ((1.0f + sqrt(nkToR(n, k))) / (1.0f - sqrt(nkToR(n, k))) - n) / ((1.0f + sqrt(nkToR(n, k))) / (1.0f - sqrt(nkToR(n, k))) - (1.0f - nkToR(n, k)) / (1.0f + nkToR(n, k)));
+}
+
 void gui() {
 	// Inform imgui of new frame
 	ImGui_ImplSdlGL3_NewFrame(g_window);
@@ -293,23 +309,58 @@ void gui() {
 	///////////////////////////////////////////////////////////////////////////
 	// List all materials in the model and show properties for the selected
 	///////////////////////////////////////////////////////////////////////////
+	bool rgChanged = false;
 	if (ImGui::CollapsingHeader("Materials", "materials_ch", true, true))
 	{
+
+		
+		
 		ImGui::ListBox("Materials", &material_index, material_getter,
 			(void*)&model->m_materials, model->m_materials.size(), 8);
 		labhelper::Material & material = model->m_materials[material_index];
 		char name[256];
 		strcpy(name, material.m_name.c_str());
+
+		tempG = material.m_g;
+		tempR = material.m_r;
+		tempN = material.m_n;
+		tempK = material.m_k;
+
 		if (ImGui::InputText("Material Name", name, 256)) { material.m_name = name; }
 		ImGui::ColorEdit3("Color", &material.m_color.x);
-		ImGui::ColorEdit3("r", &material.m_r.x);
-		ImGui::ColorEdit3("g", &material.m_g.x);
+		ImGui::ColorEdit3("Normal reflection color", &material.m_r.x);
+		ImGui::ColorEdit3("Grazing reflection color", &material.m_g.x);
+		ImGui::InputFloat("n, red", &material.m_n.x, 0.1f, 0.1f, -1, 0);
+		ImGui::InputFloat("n, green", &material.m_n.y, 0.1f, 0.1f, -1, 0);
+		ImGui::InputFloat("n, blue", &material.m_n.z, 0.1f, 0.1f, -1, 0);
+		ImGui::InputFloat("k, red", &material.m_k.x, 0.1f, 0.1f, -1, 0);
+		ImGui::InputFloat("k, green", &material.m_k.y, 0.1f, 0.1f, -1, 0);
+		ImGui::InputFloat("k, blue", &material.m_k.z, 0.1f, 0.1f, -1, 0);
 		ImGui::SliderFloat("Reflectivity", &material.m_reflectivity, 0.0f, 1.0f);
 		ImGui::SliderFloat("Metalness", &material.m_metalness, 0.0f, 1.0f);
 		ImGui::SliderFloat("Fresnel", &material.m_fresnel, 0.0f, 1.0f);
 		ImGui::SliderFloat("shininess", &material.m_shininess, 0.0f, 25000.0f);
 		ImGui::SliderFloat("Emission", &material.m_emission, 0.0f, 10.0f);
 		ImGui::SliderFloat("Transparency", &material.m_transparency, 0.0f, 1.0f);
+
+		if (material.m_g != tempG || material.m_r != tempR) {
+			material.m_n.x = rgToN(material.m_r.x, material.m_g.x);
+			material.m_n.y = rgToN(material.m_r.y, material.m_g.y);
+			material.m_n.z = rgToN(material.m_r.z, material.m_g.z);
+
+			material.m_k.x = rgToK(material.m_r.x, material.m_g.x);
+			material.m_k.y = rgToK(material.m_r.y, material.m_g.y);
+			material.m_k.z = rgToK(material.m_r.z, material.m_g.z);
+		} else if (material.m_n != tempN || material.m_k != tempK) {
+			material.m_r.x = nkToR(material.m_n.x, material.m_k.x);
+			material.m_r.y = nkToR(material.m_n.y, material.m_k.y);
+			material.m_r.z = nkToR(material.m_n.z, material.m_k.z);
+
+			material.m_g.x = nkToG(material.m_n.x, material.m_k.x);
+			material.m_g.y = nkToG(material.m_n.y, material.m_k.y);
+			material.m_g.z = nkToG(material.m_n.z, material.m_k.z);
+		}
+		
 	}
 
 	///////////////////////////////////////////////////////////////////////////

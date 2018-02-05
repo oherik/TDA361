@@ -40,6 +40,15 @@ namespace labhelper
 		return true; 
 	}
 
+	float rgToN(float r_val, float g_val) {
+		float r_fix = std::min(r_val, 0.99f);
+		return g_val * (1.0f - r_fix) / (1.0f + r_fix) + (1.0f - g_val)  * (1.0f + sqrt(r_fix)) / (1.0f - sqrt(r_fix));
+	}
+	float rgToK(float r_val, float g_val) {
+		float r_fix = std::min(r_val, 0.99f);
+		return sqrt(1.0f / (1.0f - r_fix) * r_fix * (pow((rgToN(r_fix, g_val) + 1.0f), 2.0f) - pow(rgToN(r_fix, g_val) - 1.0f, 2.0f)));
+	}
+
 	///////////////////////////////////////////////////////////////////////////
 	// Destructor
 	///////////////////////////////////////////////////////////////////////////
@@ -110,8 +119,11 @@ namespace labhelper
 			Material material; 
 			material.m_name = m.name;
 			material.m_color = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
-			material.m_r = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
-			material.m_g = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
+			material.m_r = glm::vec3(0.5f);
+			material.m_g = glm::vec3(0.5f);
+			material.m_n = glm::vec3(rgToN(material.m_r[0], material.m_g[0]), rgToN(material.m_r[1], material.m_g[1]), rgToN(material.m_r[2], material.m_g[2]));
+			material.m_k = glm::vec3(rgToK(material.m_r[0], material.m_g[0]), rgToK(material.m_r[1], material.m_g[1]), rgToK(material.m_r[2], material.m_g[2]));
+			
 			if (m.diffuse_texname != "") { 
 				material.m_color_texture.load(directory + m.diffuse_texname, 4);
 			}

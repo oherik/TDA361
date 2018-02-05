@@ -95,7 +95,7 @@ namespace pathtracer
 
 			TransparencyBlend transparency_blend(a, &transparent, hit.material->m_color);
 			BlinnPhong dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
-			BlinnPhongMetal metal(hit.material->m_color, hit.material->m_r, hit.material->m_g, hit.material->m_shininess,
+			BlinnPhongMetal metal(hit.material->m_n, hit.material->m_k, hit.material->m_shininess,
 				hit.material->m_fresnel);
 			LinearBlend metal_blend(hit.material->m_metalness, &metal, &dielectric);
 			LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);
@@ -103,7 +103,7 @@ namespace pathtracer
 			LinearBlend transparency_blend_final(hit.material->m_transparency, &transparency_blend, &reflectivity_blend);
 			
 			
-			BRDF & mat = transparency_blend_final;
+			BRDF & mat = metal;
 
 			// Update last hit position for the next distance calculation
 			last_position = vec3(hit.position);
