@@ -103,7 +103,7 @@ namespace pathtracer
 			LinearBlend transparency_blend_final(hit.material->m_transparency, &transparency_blend, &reflectivity_blend);
 			
 			
-			BRDF & mat = metal;
+			BRDF & mat = transparency_blend_final;
 
 			// Update last hit position for the next distance calculation
 			last_position = vec3(hit.position);
