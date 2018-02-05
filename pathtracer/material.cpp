@@ -162,7 +162,7 @@ namespace pathtracer
 		return vec3(0.0f); 
 	}
 
-	float f1(float n, float k, float cost) {
+	float exactReflection(float n, float k, float cost) {
 		return( 0.5*(
 
 				(pow(n,2.0f) + pow(k,2.0f) - 2 * n * cost + pow(cost,2) )/
@@ -174,11 +174,11 @@ namespace pathtracer
 			));
 	}
 
-	float net(float r, float g) {
+	float rgToN(float r, float g) {
 		return g * (1.0f - r) / (1.0f - r) + (1.0f - g)  * (1.0f - sqrt(r)) / (1.0f - sqrt(r));
 	}
-	float ket(float r, float g) {
-		return sqrt(1.0 / (1.0 - r) * r * (pow((net(r, g) + 1), 2.0f) - pow(net(r, g) - 1, 2.0f)));
+	float rgToK(float r, float g) {
+		return sqrt(1.0 / (1.0 - r) * r * (pow((rgToN(r, g) + 1), 2.0f) - pow(rgToN(r, g) - 1, 2.0f)));
 	}
 
 	vec3 BlinnPhongMetal::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) { 
@@ -227,17 +227,17 @@ namespace pathtracer
 		float cost = abs(dot(wi, n) / (n.length()*wi.length()));
 
 
-		float ret[] = { 0.0f, 0.4f,0.4f };
-		float g[] = { 0.0f, 1.0f,0.0f };
+		float rValues[] = { 0.0f, 0.4f,0.4f };
+		float gValues[] = { 0.0f, 1.0f,0.0f };
 
 
 
-		float F_wi_1 = f1(net(ret[0], g[0]), ket(ret[0], g[0]), cost); //n_m[0], k_m[0], cost);// r0_1 + (1.0f - r0_1)*pow(1.0f - whdotwi, 5.0f);
-		float F_wi_2 = f1(net(ret[1], g[1]), ket(ret[1], g[1]), cost);//r0_2 + (1.0f - r0_2)*pow(1.0f - whdotwi, 5.0f);
-		float F_wi_3 = f1(net(ret[2], g[2]), ket(ret[2], g[2]), cost);//r0_3 + (1.0f - r0_3)*pow(1.0f - whdotwi, 5.0f);
+		float F_wi_1 = exactReflection(rgToN(rValues[0], gValues[0]), rgToK(rValues[0], gValues[0]), cost); //n_m[0], k_m[0], cost);// r0_1 + (1.0f - r0_1)*pow(1.0f - whdotwi, 5.0f);
+		float F_wi_2 = exactReflection(rgToN(rValues[1], gValues[1]), rgToK(rValues[1], gValues[1]), cost);//r0_2 + (1.0f - r0_2)*pow(1.0f - whdotwi, 5.0f);
+		float F_wi_3 = exactReflection(rgToN(rValues[2], gValues[2]), rgToK(rValues[2], gValues[2]), cost);//r0_3 + (1.0f - r0_3)*pow(1.0f - whdotwi, 5.0f);
 
 
-		printf("%f     ", net(ret[0], g[0]));
+		printf("%f     ", rgToN(rValues[0], gValues[0]));
 
 
 		float F_wi_tot = (F_wi_1 + F_wi_2 + F_wi_3);
