@@ -110,6 +110,8 @@ namespace labhelper
 			Material material; 
 			material.m_name = m.name;
 			material.m_color = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
+			material.m_r = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
+			material.m_g = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
 			if (m.diffuse_texname != "") { 
 				material.m_color_texture.load(directory + m.diffuse_texname, 4);
 			}

@@ -175,10 +175,12 @@ namespace pathtracer
 	}
 
 	float rgToN(float r, float g) {
-		return g * (1.0f - r) / (1.0f - r) + (1.0f - g)  * (1.0f - sqrt(r)) / (1.0f - sqrt(r));
+		float r_fix = min(r, 0.99f);
+		return g * (1.0f - r_fix) / (1.0f - r_fix) + (1.0f - g)  * (1.0f - sqrt(r_fix)) / (1.0f - sqrt(r_fix));
 	}
 	float rgToK(float r, float g) {
-		return sqrt(1.0 / (1.0 - r) * r * (pow((rgToN(r, g) + 1), 2.0f) - pow(rgToN(r, g) - 1, 2.0f)));
+		float r_fix = min(r, 0.99f);
+		return sqrt(1.0f / (1.0f - r_fix) * r * (pow((rgToN(r_fix, g) + 1.0f), 2.0f) - pow(rgToN(r_fix, g) - 1.0f, 2.0f)));
 	}
 
 	vec3 BlinnPhongMetal::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) { 
@@ -227,17 +229,17 @@ namespace pathtracer
 		float cost = abs(dot(wi, n) / (n.length()*wi.length()));
 
 
-		float rValues[] = { 0.0f, 0.4f,0.4f };
-		float gValues[] = { 0.0f, 1.0f,0.0f };
+		vec3 rValues = m_r;
+		vec3 gValues = m_g ;
 
-
+		//printf("%f      \n", rValues[0]);
 
 		float F_wi_1 = exactReflection(rgToN(rValues[0], gValues[0]), rgToK(rValues[0], gValues[0]), cost); //n_m[0], k_m[0], cost);// r0_1 + (1.0f - r0_1)*pow(1.0f - whdotwi, 5.0f);
 		float F_wi_2 = exactReflection(rgToN(rValues[1], gValues[1]), rgToK(rValues[1], gValues[1]), cost);//r0_2 + (1.0f - r0_2)*pow(1.0f - whdotwi, 5.0f);
 		float F_wi_3 = exactReflection(rgToN(rValues[2], gValues[2]), rgToK(rValues[2], gValues[2]), cost);//r0_3 + (1.0f - r0_3)*pow(1.0f - whdotwi, 5.0f);
 
 
-		printf("%f     ", rgToN(rValues[0], gValues[0]));
+		//printf("%f     ", rgToN(rValues[0], gValues[0]));
 
 
 		float F_wi_tot = (F_wi_1 + F_wi_2 + F_wi_3);
@@ -268,7 +270,7 @@ namespace pathtracer
 
 
 
-		return vec3(vec3(F_wi_1, F_wi_2, F_wi_3));// *D_wh*G_wiwo / den);
+		return vec3(F_wi_1, F_wi_2, F_wi_3) *D_wh*G_wiwo / den;
 
 
 

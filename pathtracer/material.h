@@ -68,8 +68,8 @@ namespace pathtracer
 	class BlinnPhongMetal : public BlinnPhong
 	{
 	public: 
-		vec3 color; 
-		BlinnPhongMetal(vec3 c, float _shininess, float _R0) : color(c), BlinnPhong(_shininess, _R0) {}
+		vec3 color, m_r, m_g; 
+		BlinnPhongMetal(vec3 c, vec3 r, vec3 g, float _shininess, float _R0) : color(c), m_r(r), m_g(g), BlinnPhong(_shininess, _R0) {}
 		virtual vec3 refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 		virtual vec3 reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 	};

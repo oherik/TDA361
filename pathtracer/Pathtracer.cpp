@@ -95,7 +95,7 @@ namespace pathtracer
 
 			TransparencyBlend transparency_blend(a, &transparent, hit.material->m_color);
 			BlinnPhong dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
-			BlinnPhongMetal metal(hit.material->m_color, hit.material->m_shininess,
+			BlinnPhongMetal metal(hit.material->m_color, hit.material->m_r, hit.material->m_g, hit.material->m_shininess,
 				hit.material->m_fresnel);
 			LinearBlend metal_blend(hit.material->m_metalness, &metal, &dielectric);
 			LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);

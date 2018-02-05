@@ -25,6 +25,8 @@ namespace labhelper
 	{
 		std::string m_name;
 		glm::vec3	m_color;
+		glm::vec3	m_r;
+		glm::vec3	m_g;
 		float		m_reflectivity;
 		float		m_shininess;
 		float		m_metalness; 
