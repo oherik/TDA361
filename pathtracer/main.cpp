@@ -302,6 +302,8 @@ void gui() {
 		strcpy(name, material.m_name.c_str());
 		if (ImGui::InputText("Material Name", name, 256)) { material.m_name = name; }
 		ImGui::ColorEdit3("Color", &material.m_color.x);
+		ImGui::ColorEdit3("r", &material.m_r.x);
+		ImGui::ColorEdit3("g", &material.m_g.x);
 		ImGui::SliderFloat("Reflectivity", &material.m_reflectivity, 0.0f, 1.0f);
 		ImGui::SliderFloat("Metalness", &material.m_metalness, 0.0f, 1.0f);
 		ImGui::SliderFloat("Fresnel", &material.m_fresnel, 0.0f, 1.0f);
