@@ -19,6 +19,8 @@ float rgToK(float r, float g) {
 
 
 int main() { 
+
+
     //Koppar
     //float n_m []= { 0.294f, 1.0697f, 1.2404f };
     //float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
@@ -37,6 +39,7 @@ int main() {
     //float k_m[] = { 2.6484f,  3.5974f, 4.4094f };
 
     //jadu
+    
     float n_m []= { 1.0f, 1.0f,1.0f };
     float k_m [] = { 1.0f, 1.0f,0.1f };
 
@@ -68,9 +71,17 @@ int main() {
     vec3 wotar = vec3(0.0f, -1.0f, 0.0f);
 
 
-    
+
+
+
+
+
+
     while(angle<90.0f){
 
+
+
+        // COpy
         vec3 wh = normalize(wi + wo);
 
         float whdotwi = max(0.0f, dot(wh, wi));
@@ -82,17 +93,17 @@ int main() {
         float cost = abs(dot(wi, n) / (n.length()*wi.length()));
 
 
-        float ret[] = { 0.0f, 0.4f,0.4f };
-        float g[] = { 0.0f, 1.0f,0.0f };
+        vec3 rValues = m_r;
+        vec3 gValues = m_g ;
+
+        //printf("%f      \n", rValues[0]);
+
+        float F_wi_1 = exactReflection(rgToN(rValues[0], gValues[0]), rgToK(rValues[0], gValues[0]), cost); //n_m[0], k_m[0], cost);// r0_1 + (1.0f - r0_1)*pow(1.0f - whdotwi, 5.0f);
+        float F_wi_2 = exactReflection(rgToN(rValues[1], gValues[1]), rgToK(rValues[1], gValues[1]), cost);//r0_2 + (1.0f - r0_2)*pow(1.0f - whdotwi, 5.0f);
+        float F_wi_3 = exactReflection(rgToN(rValues[2], gValues[2]), rgToK(rValues[2], gValues[2]), cost);//r0_3 + (1.0f - r0_3)*pow(1.0f - whdotwi, 5.0f);
 
 
-
-        float F_wi_1 = f1(rgToN(rValues[0], gValues[0]), rgToK(rValues[0], gValues[0]), cost); //n_m[0], k_m[0], cost);// r0_1 + (1.0f - r0_1)*pow(1.0f - whdotwi, 5.0f);
-        float F_wi_2 = f1(rgToN(rValues[1], gValues[1]), rgToK(rValues[1], gValues[1]), cost);//r0_2 + (1.0f - r0_2)*pow(1.0f - whdotwi, 5.0f);
-        float F_wi_3 = f1(rgToN(rValues[2], gValues[2]), rgToK(rValues[2], gValues[2]), cost);//r0_3 + (1.0f - r0_3)*pow(1.0f - whdotwi, 5.0f);
-
-
-        printf("%f     ", net(ret[0], g[0]));
+        //printf("%f     ", rgToN(rValues[0], gValues[0]));
 
 
         float F_wi_tot = (F_wi_1 + F_wi_2 + F_wi_3);
@@ -134,8 +145,8 @@ int main() {
         C = normalize(cross(wo, wotar));
         F = cross(C, wo);
         wi = cos(theta) * wo + sin(theta) * F;
-    }
 
+    }
     //return BlinnPhong::reflection_brdf(wi, wo, n) * color; 
 };
 
