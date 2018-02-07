@@ -177,7 +177,7 @@ namespace pathtracer
 	vec3 BlinnPhongMetal::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) { 
 		//Koppar
 		//float n_m []= { 0.294f, 1.0697f, 1.2404f };
-	//float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
+    	//float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
 		
 		
 		//Guld
