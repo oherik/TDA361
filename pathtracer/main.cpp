@@ -71,7 +71,7 @@ void initialize()
 	///////////////////////////////////////////////////////////////////////////
 	pathtracer::point_light.intensity_multiplier = 2500.0f; 
 	pathtracer::point_light.color = vec3(1.f, 1.f, 1.f);
-	pathtracer::point_light.position = vec3(10.0f, 40.0f, 10.0f);
+	pathtracer::point_light.position = vec3(-10.0f, 40.0f, 10.0f);
 
 	///////////////////////////////////////////////////////////////////////////
 	// Load environment map 
@@ -85,6 +85,11 @@ void initialize()
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, 0.0f))));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), mat4(1.0f)));
 	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/BigSphere.obj"), mat4(1.0f)));
+	mat4 asd = mat4(1.0f);
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/island.obj"), translate(
+	//	glm::rotate(asd, (glm::mediump_float)1.56, glm::vec3(1.0f, 0.0f, 0.0f))
+	//	, vec3(-100, -10, 0))));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/island.obj"), translate(mat4(1.0f), vec3(0, -10, 0))));
 
 	///////////////////////////////////////////////////////////////////////////
 	// Add models to pathtracer scene
@@ -226,11 +231,11 @@ bool handleEvents(void)
 }
 
 float rgToN(float r_val, float g_val) {
-	float r_fix = std::min(r_val, 1.0f - EPSILON);
+	float r_fix = min(r_val, 1.0f - EPSILON);
 	return g_val * (1.0f - r_fix) / (1.0f + r_fix) + (1.0f - g_val)  * (1.0f + sqrt(r_fix)) / (1.0f - sqrt(r_fix));
 }
 float rgToK(float r_val, float g_val) {
-	float r_fix = std::min(r_val, 1.0f - EPSILON);
+	float r_fix = min(r_val, 1.0f - EPSILON);
 	return sqrt(1.0f / (1.0f - r_fix) * r_fix * (pow((rgToN(r_fix, g_val) + 1.0f), 2.0f) - pow(rgToN(r_fix, g_val) - 1.0f, 2.0f)));
 }
 float nkToR(float n, float k) {
@@ -328,8 +333,8 @@ void gui() {
 
 		if (ImGui::InputText("Material Name", name, 256)) { material.m_name = name; }
 		ImGui::ColorEdit3("Color", &material.m_color.x);
-		//ImGui::ColorEdit3("Normal reflection color", &material.m_r.x);
-		//ImGui::ColorEdit3("Grazing reflection color", &material.m_g.x);
+		ImGui::ColorEdit3("Normal reflection color", &material.m_r.x);
+		ImGui::ColorEdit3("Grazing reflection color", &material.m_g.x);
 		ImGui::InputFloat("n, red", &material.m_n.x, 0.1f, 0.1f, -1, 0);
 		ImGui::InputFloat("n, green", &material.m_n.y, 0.1f, 0.1f, -1, 0);
 		ImGui::InputFloat("n, blue", &material.m_n.z, 0.1f, 0.1f, -1, 0);
