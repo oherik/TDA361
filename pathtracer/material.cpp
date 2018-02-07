@@ -178,7 +178,8 @@ namespace pathtracer
 		//Koppar
 		//float n_m []= { 0.294f, 1.0697f, 1.2404f };
     	//float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
-		
+		//float m_n []= { 0.294f, 1.0697f, 1.2404f };
+		//float m_k [] = { 3.2456f, 2.6866f, 2.3929f };
 		
 		//Guld
 		//float n_m []= { 0.15557f, 0.42415f,1.3831f };
@@ -204,7 +205,10 @@ namespace pathtracer
 		float ndotwi = max(0.0f, dot(n, wi));
 		float ndotwo = max(0.0f, dot(n, wo));
 
-		float cost = abs(dot(wi, n) / (n.length()*wi.length()));
+		vec3 n_normalized = normalize(n);
+		vec3 wi_normalized = normalize(wi);
+
+		float cost = dot(n_normalized, wi_normalized);
 
 		float F_wi_1 = exactReflection(m_n[0], m_k[0], cost);
 		float F_wi_2 = exactReflection(m_n[1], m_k[1], cost);
@@ -216,9 +220,11 @@ namespace pathtracer
 		float den = (4.0f * ndotwo*ndotwi);
 
 		if (den < EPSILON) return vec3(0.0f);
-		
+
 		return vec3(F_wi_1, F_wi_2, F_wi_3) * D_wh * G_wiwo / den;
 	};
+
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// A Transparency Blend between two BRDFs
