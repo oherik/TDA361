@@ -328,8 +328,8 @@ void gui() {
 
 		if (ImGui::InputText("Material Name", name, 256)) { material.m_name = name; }
 		ImGui::ColorEdit3("Color", &material.m_color.x);
-		ImGui::ColorEdit3("Normal reflection color", &material.m_r.x);
-		ImGui::ColorEdit3("Grazing reflection color", &material.m_g.x);
+		//ImGui::ColorEdit3("Normal reflection color", &material.m_r.x);
+		//ImGui::ColorEdit3("Grazing reflection color", &material.m_g.x);
 		ImGui::InputFloat("n, red", &material.m_n.x, 0.1f, 0.1f, -1, 0);
 		ImGui::InputFloat("n, green", &material.m_n.y, 0.1f, 0.1f, -1, 0);
 		ImGui::InputFloat("n, blue", &material.m_n.z, 0.1f, 0.1f, -1, 0);
