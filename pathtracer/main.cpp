@@ -232,11 +232,11 @@ bool handleEvents(void)
 }
 
 float rgToN(float r_val, float g_val) {
-	float r_fix = min(r_val, 1.0f - EPSILON);
+	float r_fix = std::min(r_val, 1.0f - EPSILON);
 	return g_val * (1.0f - r_fix) / (1.0f + r_fix) + (1.0f - g_val)  * (1.0f + sqrt(r_fix)) / (1.0f - sqrt(r_fix));
 }
 float rgToK(float r_val, float g_val) {
-	float r_fix = min(r_val, 1.0f - EPSILON);
+	float r_fix = std::min(r_val, 1.0f - EPSILON);
 	return sqrt(1.0f / (1.0f - r_fix) * r_fix * (pow((rgToN(r_fix, g_val) + 1.0f), 2.0f) - pow(rgToN(r_fix, g_val) - 1.0f, 2.0f)));
 }
 float nkToR(float n, float k) {
