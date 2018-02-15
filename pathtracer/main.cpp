@@ -12,6 +12,7 @@
 #include <string>
 #include "Pathtracer.h"
 #include "embree.h"
+#include "spectrum.h"
 
 using namespace glm;
 using namespace std; 
