@@ -218,7 +218,7 @@ namespace pathtracer
 		float den = (4.0f * ndotwo*ndotwi);
 
 		if(degrees(acos(cost))> 85)
-		printf("%f %f %f %f \n", degrees(acos(cost)), F_wi_1, F_wi_2, F_wi_3);
+		//printf("%f %f %f %f \n", degrees(acos(cost)), F_wi_1, F_wi_2, F_wi_3);
 
 		if (den < EPSILON) return vec3(0.0f);
 
