@@ -11,49 +11,64 @@ typedef double Float;
 typedef float Float;
 #endif // PBRT_FLOAT_AS_DOUBLE
 
-inline Float Lerp(Float t, Float v1, Float v2) {
+
+class SampledSpectrum;
+template <int nSamples> class CoefficientSpectrum;
+typedef RGBSpectrum Spectrum;
+//typedef SampledSpectrum Spectrum;
+
+static  Float Lerp(Float t, Float v1, Float v2) {
 	return (1 - t) * v1 + t * v2;
 }
 
+static const int sampledLambdaStart = 400;
+static const int sampledLambdaEnd = 700;
+static const int nSpectralSamples = 60; //Should be enough for the visible spectrum mvh Erik
+//XYZ stuff
+static const int nCIESamples = 471;
+extern const Float CIE_X[nCIESamples];
+extern const Float CIE_Y[nCIESamples];
+extern const Float CIE_Z[nCIESamples];
+extern const Float CIE_lambda[nCIESamples];
+static const Float CIE_Y_integral = 106.856895;
+
+
 Float AverageSpectrumSamples(const Float *lambda, const Float *vals,
 	int n, Float lambdaStart, Float lambdaEnd) {
-		if (lambdaEnd <= lambda[0]) return vals[0];
-		if (lambdaStart >= lambda[n - 1]) return vals[n - 1];
-		if (n == 1) return vals[0];
-		Float sum = 0;
-		if (lambdaStart < lambda[0])
-			sum += vals[0] * (lambda[0] - lambdaStart);
-		if (lambdaEnd > lambda[n - 1])
-			sum += vals[n - 1] * (lambdaEnd - lambda[n - 1]);
-		int i = 0;
-		while (lambdaStart > lambda[i + 1]) ++i;
-		auto interp = [lambda, vals](Float w, int i) {
-			return Lerp((w - lambda[i]) / (lambda[i + 1] - lambda[i]),
-				vals[i], vals[i + 1]);
-		};
-		for (; i + 1 < n && lambdaEnd >= lambda[i]; ++i) {
-			Float segLambdaStart = std::max(lambdaStart, lambda[i]);
-			Float segLambdaEnd = std::min(lambdaEnd, lambda[i + 1]);
-			sum += 0.5 * (interp(segLambdaStart, i) + interp(segLambdaEnd, i)) *
-				(segLambdaEnd - segLambdaStart);
-		}
-		return sum / (lambdaEnd - lambdaStart);
+	if (lambdaEnd <= lambda[0]) return vals[0];
+	if (lambdaStart >= lambda[n - 1]) return vals[n - 1];
+	if (n == 1) return vals[0];
+	Float sum = 0;
+	if (lambdaStart < lambda[0])
+		sum += vals[0] * (lambda[0] - lambdaStart);
+	if (lambdaEnd > lambda[n - 1])
+		sum += vals[n - 1] * (lambdaEnd - lambda[n - 1]);
+	int i = 0;
+	while (lambdaStart > lambda[i + 1]) ++i;
+	auto interp = [lambda, vals](Float w, int i) {
+		return Lerp((w - lambda[i]) / (lambda[i + 1] - lambda[i]),
+			vals[i], vals[i + 1]);
+	};
+	for (; i + 1 < n && lambdaEnd >= lambda[i]; ++i) {
+		Float segLambdaStart = std::max(lambdaStart, lambda[i]);
+		Float segLambdaEnd = std::min(lambdaEnd, lambda[i + 1]);
+		sum += 0.5 * (interp(segLambdaStart, i) + interp(segLambdaEnd, i)) *
+			(segLambdaEnd - segLambdaStart);
+	}
+	return sum / (lambdaEnd - lambdaStart);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//	Linear interpolation between two spectrums
-///////////////////////////////////////////////////////////////////////////////
-//inline Spectrum Lerp(Float t, const CoefficientSpectrum &s1, const CoefficientSpectrum &s2) {
-//	return (1 - t) * s1 + t * s2;
-//} //TODO where be?
+
 
 template <int nSpectrumSamples> class CoefficientSpectrum {  //Based on pbrt
 public:
+	
+
 
 	///////////////////////////////////////////////
 	//	Initialize a spectrum with constant value v over all samples
 	///////////////////////////////////////////////
-	CoefficientSpectrum(Float v = 0.f) { 
+	CoefficientSpectrum(Float v = 0.f) {
 		for (int i = 0; i < nSpectrumSamples; ++i) {
 			c[i] = v;
 		}
@@ -214,13 +229,13 @@ public:
 		return c[i];
 	}
 
-	
+
 	///////////////////////////////////////////////////////////////////////////////
 	//	Constant sample size
 	///////////////////////////////////////////////////////////////////////////////
 	static const int nSamples = nSpectrumSamples;
 
-	
+
 	//TODO make more general
 
 protected:
@@ -237,18 +252,11 @@ protected:
 ///////////////////////////////////////////////////////////////////////////////
 //	An SPD with uniformly spaced samples in the visible spectrum
 ///////////////////////////////////////////////////////////////////////////////
-static const int sampledLambdaStart = 400;
-static const int sampledLambdaEnd = 700;
-static const int nSpectralSamples = 60; //Should be enough for the visible spectrum mvh Erik
+
 
 class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
 public:
 	SampledSpectrum(Float v = 0.f) : CoefficientSpectrum(v) { }
-
-	static  Float Lerp(Float t, Float v1, Float v2) {
-		return (1 - t) * v1 + t * v2;
-	}
-	//TODO shouldn't be here
 
 	///////////////////////////////////////////////////////////////////////////////
 	//	Takes arrays of SPD sample values v at given wavelengths lambda and uses them to define a piecewise linear function to represent the SPD
@@ -294,9 +302,9 @@ public:
 
 		sortVecPair(slambda, sv, less_than());
 	}
-	
 
-	struct less_than{
+
+	struct less_than {
 		inline bool operator() (const std::pair<Float, Float>& a, const std::pair<Float, Float>& b)
 		{
 			return (a.first < b.first);
@@ -304,7 +312,7 @@ public:
 	};
 
 	template <typename T, typename R, typename Compare>
-	static int sortVecPair(std::vector<T>& vecA, std::vector<R>& vecB, Compare cmp)	{
+	static int sortVecPair(std::vector<T>& vecA, std::vector<R>& vecB, Compare cmp) {
 
 		std::vector<pair<T, R>> vecC;
 		vecC.reserve(vecA.size());
@@ -326,8 +334,46 @@ public:
 		}
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	//	Compute using Reimann sum
+	///////////////////////////////////////////////////////////////////////////////
+	void ToXYZ(Float xyz[3]) const {
+		xyz[0] = xyz[1] = xyz[2] = 0.f;
+		for (int i = 0; i < nSpectralSamples; ++i) {
+			xyz[0] += X.c[i] * c[i];
+			xyz[1] += Y.c[i] * c[i];
+			xyz[2] += Z.c[i] * c[i];
+		}
+		Float scale = Float(sampledLambdaEnd - sampledLambdaStart) /
+			Float(CIE_Y_integral * nSpectralSamples);
+		xyz[0] *= scale;
+		xyz[1] *= scale;
+		xyz[2] *= scale;
+	}
+
+	static void Init() {
+		for (int i = 0; i < nSpectralSamples; ++i) {
+			Float wl0 = Lerp(Float(i) / Float(nSpectralSamples), sampledLambdaStart, sampledLambdaEnd);
+			Float wl1 = Lerp(Float(i + 1) / Float(nSpectralSamples), sampledLambdaStart, sampledLambdaEnd);
+			X.c[i] = AverageSpectrumSamples(CIE_lambda, CIE_X, nCIESamples, wl0, wl1);
+			Y.c[i] = AverageSpectrumSamples(CIE_lambda, CIE_Y, nCIESamples, wl0, wl1);
+			Z.c[i] = AverageSpectrumSamples(CIE_lambda, CIE_Z, nCIESamples, wl0, wl1);
+		}
+		//Compute XYZ matching functions for SampledSpectrum 324
+		//	Compute RGB to spectrum functions for SampledSpectrum
+	}
+
 private:
-	//SampledSpectrum Private Data 324
+
+	static SampledSpectrum X, Y, Z;
 };
 
 
+
+
+///////////////////////////////////////////////////////////////////////////////
+//	Linear interpolation between two spectrums
+///////////////////////////////////////////////////////////////////////////////
+inline Spectrum Lerp(Float t, const Spectrum &s1, const Spectrum &s2) {
+	return s1 * (1 - t) + s2 * t;
+}
