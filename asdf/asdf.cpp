@@ -36,8 +36,9 @@ float m_k [] = { 3.2456f, 2.6866f, 2.3929f };
 //float k_m[] = { 2.6484f,  3.5974f, 4.4094f };
 
 
-float shininess = 203.0f;
+float shininess = 25000.0f;
 float EPSILON = 0.00001f;
+float pi = 3.14159265359f;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Get a random float. Note that we need one "generator" per thread, or we 
@@ -73,6 +74,7 @@ glm::vec3 perpendicular(const glm::vec3 &v)
 
 
 vec3 reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) { 
+
     //Koppar
     //float n_m []= { 0.294f, 1.0697f, 1.2404f };
     //float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
@@ -111,13 +113,14 @@ vec3 reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
     float F_wi_2 = exactReflection(m_n[1], m_k[1], cost);
     float F_wi_3 = exactReflection(m_n[2], m_k[2], cost);
 
-    float D_wh = (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
+    float D_wh = (shininess + 2.0f) / (2.0f * pi) * pow(ndotwh, shininess);
     float G_wiwo = min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
 
     float den = (4.0f * ndotwo*ndotwi);
 
     if (den < EPSILON) return vec3(0.0f);
     
+    printf("%f %f %f\n", F_wi_1, F_wi_2, F_wi_3);
     return vec3(F_wi_1, F_wi_2, F_wi_3) * D_wh * G_wiwo / den;
 };
 
@@ -148,14 +151,9 @@ vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {
     return reflection_brdf(wi, wo, n);
 }
 
-
-
-
-
-
 int main() { 
 
-    float theta = 0.08f;
+    float theta = 0.02f;
     float angle = 0.0f;
     vec3 n = vec3(1.0f, 0.0f, 0.0f);
     vec3 wo = vec3(1.0f, 0.0f, 0.0f);
@@ -167,10 +165,11 @@ int main() {
     while(angle<(3.14f/2.0f)){
 
 
+        printf("angle: %f\n", degrees(angle));
         brdf = sample_wi(wi, wo, n, pdf);
         float cosineTerm = abs(dot(wi, n));
 
-        printf("angle: %f Red: %f Green: %f Blue: %f\n", angle, brdf.x/pdf, brdf.y/pdf, brdf.z/pdf);
+        printf("Red: %f Green: %f Blue: %f\n", brdf.x/pdf, brdf.y/pdf, brdf.z/pdf);
 
 
 
@@ -178,7 +177,7 @@ int main() {
         angle += theta;
         vec3 C = normalize(cross(wo, wotar));
         vec3 F = cross(C, wo);
-        wi = cos(theta) * wo + sin(theta) * F;
+        wo = cos(theta) * wo + sin(theta) * F;
     }
     //return BlinnPhong::reflection_brdf(wi, wo, n) * color; 
 };
