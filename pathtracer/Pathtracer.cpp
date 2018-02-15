@@ -6,6 +6,7 @@
 #include "material.h"
 #include "embree.h"
 #include "sampling.h"
+#include "spectrum.h"
 
 using namespace std; 
 using namespace glm; 
@@ -58,14 +59,16 @@ namespace pathtracer
 	// direction (-r.d), through path tracing.  
 	///////////////////////////////////////////////////////////////////////////
 	vec3 Li(Ray & primary_ray) {
-		vec3 L = vec3(0.0f);
+		Spectrum spectrumSample;
+
+		//vec3 L = vec3(0.0f);
 		vec3 path_throughput = vec3(1.0f);
 		Ray current_ray = primary_ray;
 		vec3 last_position = vec3(0.0f);
 
 		//Task 5: bounce it up
 		for (int i = 0; i < settings.max_bounces; i++){
-			
+
 			// Get the intersection information from the ray
 			Intersection hit = getIntersection(current_ray);
 
@@ -117,18 +120,41 @@ namespace pathtracer
 			if (!occluded(lightRay)){
 				vec3 Li = point_light.intensity_multiplier * point_light.color * falloff_factor;
 				vec3 wi = normalize(point_light.position - hit.position);
-				L = L + path_throughput * (mat.f(wi, hit.wo, hit.shading_normal) * Li * std::max(0.0f, dot(wi, hit.shading_normal)));
+
+				vec3 add = path_throughput * (mat.f(wi, hit.wo, hit.shading_normal) * Li * std::max(0.0f, dot(wi, hit.shading_normal)));
+				Float rgb[3] = { add.x, add.y, add.z };
+				
+				Spectrum addSample = Spectrum::FromRGB(rgb, SpectrumType::Reflectance);
+				spectrumSample = spectrumSample + addSample;
+
+				//L = L + path_throughput * (mat.f(wi, hit.wo, hit.shading_normal) * Li * std::max(0.0f, dot(wi, hit.shading_normal)));
 			}
 
 			// Emitted radiance from intersection
-			L = L + path_throughput * hit.material->m_emission;
+			vec3 add2 = path_throughput * hit.material->m_emission;
+			Float rgb[3] = { add2.x, add2.y, add2.z };
+
+			Spectrum addSample2 = RGBSpectrum::FromRGB(rgb);
+			spectrumSample = spectrumSample + addSample2;
+			
+			
+			
+			//L = L + path_throughput * hit.material->m_emission;
 
 			// Sample incoming direction
 			vec3 wi;
 			float pdf = 0.0f;
 			vec3 brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
 
-			if (pdf < EPSILON) return L;
+			if (pdf < EPSILON) {
+				Float rgb[3];
+				spectrumSample.ToRGB(rgb);
+				return vec3(rgb[0], rgb[1], rgb[2]);
+
+
+				// return L;
+
+			}
 			
 			float cosineTerm = abs(dot(wi, hit.shading_normal));
 
@@ -137,7 +163,10 @@ namespace pathtracer
 			//Break if the throughput is 0
 			if (length(path_throughput) < EPSILON)
 			{
-				return L;
+				Float L[3];
+				spectrumSample.ToRGB(L);
+				return vec3(L[0], L[1], L[2]);
+				//return L;
 			}
 			
 			//Next ray
@@ -150,7 +179,11 @@ namespace pathtracer
 
 			//Intersect the new ray
 			if (!intersect(current_ray)){
-				return L + path_throughput * Lenvironment(current_ray.d);
+				Float L[3];
+				spectrumSample.ToRGB(L);
+				return vec3(L[0], L[1], L[2]) + path_throughput * Lenvironment(current_ray.d);
+				
+				//return L + path_throughput * Lenvironment(current_ray.d);
 			}
 
 		}
@@ -202,7 +235,10 @@ namespace pathtracer
 		}
 		// Return the final outgoing radiance for the primary ray
 		*/
-		return L;
+		Float rgb[3];
+		spectrumSample.ToRGB(rgb);
+		return vec3(rgb[0], rgb[1], rgb[2]);
+		//return L;
 	}
 
 	///////////////////////////////////////////////////////////////////////////
