@@ -4,6 +4,72 @@
 
 namespace pathtracer
 {
+
+    //Fresnell terms
+
+    //Schlik linear approx
+    float schlickFres(float R0, vec3 wh, vec3 wi){
+		return R0 + (1 - R0)*pow(1 - dot(wh, wi), 5);
+    }
+
+    //Diffuse terms
+
+    //Blinn Phong
+    float blinnPhongDiff(float shininess, float ndotwh){
+		return (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
+    }
+
+
+    //Beckmann
+    //m = sqrt(2/(shininess+2))
+    float beckDiff(float ndotwh, float m){
+        float ndotwh2 = ndotwh * ndotwh;
+        float m2 = m * m;
+        return exp((ndotwh2 - 1)/(m2 * ndotwh2))/(M_PI * m2 * ndotwh2 * ndotwh2);
+    }
+
+
+    //Geometric terms
+
+    //Cook-torrance
+    float cookGeom(float ndotwh, float ndotwo, float wodotwh, float ndotwi){
+	    return min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
+    }
+
+    //Smith-Schlick
+    //k = roughness * sqrt(2/M_PI)
+    float smithSchlickGeom(float ndotwo, float ndotwi, float k){
+        return ((ndotwi) / (ndotwi * (1-k) + k)) * ((ndotwo) / (ndotwo * (1-k) + k));
+    }
+
+    //Smith-Walter
+    float smithWalterGeom(float ndotwo, float ndotwi, float wo, float wi, float wh, float n, float m){
+        if (dot(wo,wh)/dot(wo,n) <= 0 || dot(wi,wh)/dot(wi,n) <= 0){
+            return 0;
+        }
+
+        float awo = 1 / (m * tan(acos(ndotwo)));
+        float first, second;
+        if(awo < 1.6){
+            float awo2 = awo * awo;
+            first = (3.535f * awo + 2.181f * awo2) / (1.0f + 2.276f * awo + 2.577f * awo2);
+        }else{
+            first = 1;
+        }
+
+        float awi = 1 / (m * tan(acos(ndotwi)));
+        if(awi < 1.6){
+            float awi2 = awi2 * awi2;
+            second = (3.535f * awi + 2.181f * awi2) / (1.0f + 2.276f * awi + 2.577f * awi2);
+        }else{
+            return first;
+        }
+
+        return first * second;
+    }
+
+    //
+
 	///////////////////////////////////////////////////////////////////////////
 	// A Lambertian (diffuse) material
 	///////////////////////////////////////////////////////////////////////////
