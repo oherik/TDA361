@@ -207,9 +207,11 @@ public:
 	//	Inequality test
 	///////////////////////////////////////////////////////////////////////////////
 	bool operator!=(const CoefficientSpectrum &s2) const {
-		for (int i = 0; i < nSpectrumSamples; ++i)
-			if (c[i] == s2.c[i];)
+		for (int i = 0; i < nSpectrumSamples; ++i){
+			if (c[i] == s2.c[i]){
 				return false;
+            }
+        }
 		return true;
 	}
 
