@@ -242,10 +242,8 @@ namespace pathtracer
 
 	vec3 BlinnPhongMetal::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) { 
 		//Koppar
-		//float n_m []= { 0.294f, 1.0697f, 1.2404f };
-    	//float k_m [] = { 3.2456f, 2.6866f, 2.3929f };
-		//float m_n []= { 0.294f, 1.0697f, 1.2404f };
-		//float m_k [] = { 3.2456f, 2.6866f, 2.3929f };
+        float m_n []= { 0.294f, 1.0697f, 1.2404f };
+		float m_k [] = { 3.2456f, 2.6866f, 2.3929f };
 		
 		//Guld
 		//float n_m []= { 0.15557f, 0.42415f,1.3831f };
@@ -284,6 +282,9 @@ namespace pathtracer
 		float G_wiwo = min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
 
 		float den = (4.0f * ndotwo*ndotwi);
+
+		if(degrees(acos(cost))> 85)
+		//printf("%f %f %f %f \n", degrees(acos(cost)), F_wi_1, F_wi_2, F_wi_3);
 
 		if (den < EPSILON) return vec3(0.0f);
 

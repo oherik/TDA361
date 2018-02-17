@@ -116,6 +116,9 @@ void initialize()
 	// just looks a little better... 
 	///////////////////////////////////////////////////////////////////////////
 	//glEnable(GL_FRAMEBUFFER_SRGB);
+
+	// Initialize spectrum sampling
+	SampledSpectrum::Init();
 }
 
 void display(void)
