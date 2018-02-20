@@ -20,6 +20,7 @@ namespace pathtracer
 	Environment environment; 
 	Image rendered_image; 
 	PointLight point_light; 
+    Brdf brdf;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Restart rendering of image

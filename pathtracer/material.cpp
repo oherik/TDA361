@@ -7,7 +7,7 @@ namespace pathtracer
 
     //Fresnell terms
 
-    //Schlik linear approx
+    //Schlick linear approx
     float schlickFres(float R0, vec3 wh, vec3 wi){
 		return R0 + (1 - R0)*pow(1 - dot(wh, wi), 5);
     }

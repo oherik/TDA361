@@ -373,6 +373,25 @@ void gui() {
 	}
 
 	///////////////////////////////////////////////////////////////////////////
+	// BRDF modifiers 
+	///////////////////////////////////////////////////////////////////////////
+    const char* fresnelTerms[] = { "Schlick's approximation"};
+    const char* diffuseTerms[] = { "Blinn Phong", "Beckmann"};
+    const char* geometricTerms[] = { "Cook-Torrance", "Smith-Schlick", "Smith-Walter"};
+
+    pathtracer::brdf.fresnelCurrent = 0;
+    pathtracer::brdf.diffuseCurrent = 0;
+    pathtracer::brdf.geometricCurrent = 0;
+
+	if (ImGui::CollapsingHeader("BRDF modifiers", "brdf_ch", true, true))
+    {
+        ImGui::ListBox("Fresnell Term", &pathtracer::brdf.fresnelCurrent, fresnelTerms, sizeof(fresnelTerms)/sizeof(fresnelTerms[0]), 2);
+        ImGui::ListBox("Diffuse Term", &pathtracer::brdf.diffuseCurrent, diffuseTerms, sizeof(diffuseTerms)/sizeof(diffuseTerms[0]), 2);
+        ImGui::ListBox("Geometric Term", &pathtracer::brdf.geometricCurrent, geometricTerms, sizeof(geometricTerms)/sizeof(geometricTerms[0]), 2);
+    }
+
+
+	///////////////////////////////////////////////////////////////////////////
 	// Light and environment map
 	///////////////////////////////////////////////////////////////////////////
 	if (ImGui::CollapsingHeader("Light sources", "lights_ch", true, true))
