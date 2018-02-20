@@ -61,7 +61,7 @@ namespace pathtracer
 	vec3 Li(Ray & primary_ray) {
 		Spectrum spectrumSample;
 		const vec3 fullLight = vec3(1.0f, 1.0f, 1.0f);
-		Spectrum throughput = Spectrum::FromRGB(fullLight, SpectrumType::Reflectance);
+		Spectrum throughput = Spectrum::FromRGB(fullLight, SpectrumType::Illuminant);
 		Ray current_ray = primary_ray;
 		vec3 last_position = vec3(0.0f);
 
