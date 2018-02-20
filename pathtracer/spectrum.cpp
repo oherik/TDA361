@@ -66,16 +66,13 @@ SampledSpectrum SampledSpectrum::FromRGB(const Float rgb[3], SpectrumType type) 
 	if (type == SpectrumType::Reflectance) {
 		if (rgb[0] <= rgb[1] && rgb[0] <= rgb[2]) {  //Red as minimum
 			r += rgb[0] * rgbRefl2SpectWhite;
-			for (int i = 0; i < 30; ++i) {
-				Float before = r.c[i];
-			}
 			if (rgb[1] <= rgb[2]) {
-				r += rgbRefl2SpectCyan * (rgb[1] - rgb[0]);
-				r += rgbRefl2SpectBlue * (rgb[2] - rgb[1]);
+				r += (rgb[1] - rgb[0]) * rgbRefl2SpectCyan;
+				r += (rgb[2] - rgb[1]) * rgbRefl2SpectBlue;
 			}
 			else {
-				r += rgbRefl2SpectCyan * (rgb[2] - rgb[0]);
-				r += rgbRefl2SpectGreen * (rgb[1] - rgb[2]);
+				r += (rgb[2] - rgb[0]) * rgbRefl2SpectCyan;
+				r += (rgb[1] - rgb[2]) * rgbRefl2SpectGreen;
 			}
 		}
 		else if (rgb[1] <= rgb[0] && rgb[1] <= rgb[2]) { //Green as minimum
@@ -102,7 +99,39 @@ SampledSpectrum SampledSpectrum::FromRGB(const Float rgb[3], SpectrumType type) 
 		}
 	}
 	else {
-		//Convert illuminant spectrum to RGB
+		if (rgb[0] <= rgb[1] && rgb[0] <= rgb[2]) {  //Red as minimum
+			r += rgb[0] * rgbIllum2SpectWhite;
+			if (rgb[1] <= rgb[2]) {
+				r += (rgb[1] - rgb[0]) * rgbIllum2SpectCyan;
+				r += (rgb[2] - rgb[1]) * rgbIllum2SpectBlue;
+			}
+			else {
+				r += (rgb[2] - rgb[0]) * rgbIllum2SpectCyan;
+				r += (rgb[1] - rgb[2]) * rgbIllum2SpectGreen;
+			}
+		}
+		else if (rgb[1] <= rgb[0] && rgb[1] <= rgb[2]) { //Green as minimum
+			r += rgb[1] * rgbIllum2SpectWhite;
+			if (rgb[0] <= rgb[2]) {
+				r += rgbIllum2SpectMagenta * (rgb[0] - rgb[1]);
+				r += rgbIllum2SpectBlue * (rgb[2] - rgb[0]);
+			}
+			else {
+				r += rgbIllum2SpectMagenta * (rgb[2] - rgb[1]);
+				r += rgbIllum2SpectRed * (rgb[0] - rgb[2]);
+			}
+		}
+		else { //Blue as minimum
+			r += rgb[2] * rgbIllum2SpectWhite;
+			if (rgb[0] <= rgb[1]) {
+				r += rgbIllum2SpectYellow * (rgb[0] - rgb[2]);
+				r += rgbIllum2SpectGreen * (rgb[1] - rgb[0]);
+			}
+			else {
+				r += rgbIllum2SpectYellow * (rgb[1] - rgb[2]);
+				r += rgbIllum2SpectRed * (rgb[0] - rgb[1]);
+			}
+		}
 	}
 	
 	return r.Clamp();

@@ -117,7 +117,7 @@ namespace pathtracer
 
 			if (!occluded(lightRay)) {
 				vec3 wi = normalize(point_light.position - hit.position);
-				Spectrum lightSpectrum = Spectrum::FromRGB(point_light.color, SpectrumType::Reflectance);
+				Spectrum lightSpectrum = Spectrum::FromRGB(point_light.color, SpectrumType::Illuminant);
 				Spectrum reflectance = Spectrum::FromRGB(mat.f(wi, hit.wo, hit.shading_normal), SpectrumType::Reflectance);
 
 				spectrumSample = spectrumSample + lightSpectrum * reflectance * point_light.intensity_multiplier * falloff_factor * throughput * std::max(0.0f, dot(wi, hit.shading_normal));
