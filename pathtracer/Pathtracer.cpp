@@ -60,7 +60,7 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	vec3 Li(Ray & primary_ray) {
 		Spectrum spectrumSample;
-
+		//Spectrum throughput = 
 		//vec3 L = vec3(0.0f);
 		vec3 path_throughput = vec3(1.0f);
 		Ray current_ray = primary_ray;
@@ -117,15 +117,22 @@ namespace pathtracer
 			const float falloff_factor = 1.0f / (distance_to_light*distance_to_light);
 			Ray lightRay(hit.position + EPSILON * hit.geometry_normal, normalize(point_light.position - hit.position), 0.0f, distance_to_light);
 
-			if (!occluded(lightRay)){
-				vec3 Li = point_light.intensity_multiplier * point_light.color * falloff_factor;
+			if (!occluded(lightRay)) {
 				vec3 wi = normalize(point_light.position - hit.position);
+				Spectrum lightSpectrum = Spectrum::FromRGB(point_light.color, SpectrumType::Reflectance);
+				Spectrum reflectance = Spectrum::FromRGB(mat.f(wi, hit.wo, hit.shading_normal), SpectrumType::Reflectance);
+				Spectrum throughput = Spectrum::FromRGB(path_throughput, SpectrumType::Reflectance);
 
-				vec3 add = path_throughput * (mat.f(wi, hit.wo, hit.shading_normal) * Li * std::max(0.0f, dot(wi, hit.shading_normal)));
-				Float rgb[3] = { add.x, add.y, add.z };
+				spectrumSample = spectrumSample + lightSpectrum * reflectance * point_light.intensity_multiplier * falloff_factor * throughput * std::max(0.0f, dot(wi, hit.shading_normal));
+
+				//vec3 Li = point_light.intensity_multiplier * point_light.color * falloff_factor;
 				
-				Spectrum addSample = Spectrum::FromRGB(rgb, SpectrumType::Reflectance);
-				spectrumSample = spectrumSample + addSample;
+
+				//vec3 add = (m * Li * 
+				//Float rgb[3] = { add.x, add.y, add.z };
+				
+				//Spectrum addSample = Spectrum::FromRGB(rgb, SpectrumType::Reflectance);
+				//spectrumSample = spectrumSample + addSample;
 
 				//L = L + path_throughput * (mat.f(wi, hit.wo, hit.shading_normal) * Li * std::max(0.0f, dot(wi, hit.shading_normal)));
 			}

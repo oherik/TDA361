@@ -1,6 +1,7 @@
 #include "spectrum.h"
 
 
+
 SampledSpectrum SampledSpectrum::X;
 SampledSpectrum SampledSpectrum::Y;
 SampledSpectrum SampledSpectrum::Z;
@@ -53,6 +54,11 @@ RGBSpectrum SampledSpectrum::ToRGBSpectrum() const {
 	float rgb[3];
 	ToRGB(rgb);
 	return RGBSpectrum::FromRGB(rgb, SpectrumType::Reflectance);
+}
+
+SampledSpectrum SampledSpectrum::FromRGB(glm::vec3 rgb, SpectrumType type) {
+	const Float rgbArray[3] = { rgb.r, rgb.g, rgb.b };
+	return SampledSpectrum::FromRGB(rgbArray, type);
 }
 
 SampledSpectrum SampledSpectrum::FromRGB(const Float rgb[3], SpectrumType type) {

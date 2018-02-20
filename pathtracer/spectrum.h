@@ -4,6 +4,7 @@
 #include <utility>
 #include <functional>
 #include <algorithm>    // std::sort
+#include <glm/glm.hpp> //vec3
 
 #ifdef PBRT_FLOAT_AS_DOUBLE
 typedef double Float;
@@ -375,6 +376,7 @@ public:
 
 	RGBSpectrum ToRGBSpectrum() const;
 	static SampledSpectrum FromRGB(const float rgb[3], SpectrumType type);
+	static SampledSpectrum FromRGB(glm::vec3, SpectrumType type);
 
 	static SampledSpectrum FromXYZ(const Float xyz[3], SpectrumType type = SpectrumType::Reflectance) {
 		Float rgb[3];
