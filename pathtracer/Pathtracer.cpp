@@ -60,7 +60,7 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	vec3 Li(Ray & primary_ray) {
 		Spectrum spectrumSample;
-		//Spectrum throughput = 
+		//Spectrum throughput = Spectrum::FromRGB(vec3(1.0f), SpectrumType::Reflectance);
 		//vec3 L = vec3(0.0f);
 		vec3 path_throughput = vec3(1.0f);
 		Ray current_ray = primary_ray;
@@ -121,9 +121,9 @@ namespace pathtracer
 				vec3 wi = normalize(point_light.position - hit.position);
 				Spectrum lightSpectrum = Spectrum::FromRGB(point_light.color, SpectrumType::Reflectance);
 				Spectrum reflectance = Spectrum::FromRGB(mat.f(wi, hit.wo, hit.shading_normal), SpectrumType::Reflectance);
-				Spectrum throughput = Spectrum::FromRGB(path_throughput, SpectrumType::Reflectance);
+				Spectrum tSpec = Spectrum::FromRGB(path_throughput, SpectrumType::Reflectance);
 
-				spectrumSample = spectrumSample + lightSpectrum * reflectance * point_light.intensity_multiplier * falloff_factor * throughput * std::max(0.0f, dot(wi, hit.shading_normal));
+				spectrumSample = spectrumSample + lightSpectrum * reflectance * point_light.intensity_multiplier * falloff_factor * tSpec * std::max(0.0f, dot(wi, hit.shading_normal));
 
 				//vec3 Li = point_light.intensity_multiplier * point_light.color * falloff_factor;
 				
@@ -138,13 +138,9 @@ namespace pathtracer
 			}
 
 			// Emitted radiance from intersection
-			vec3 add2 = path_throughput * hit.material->m_emission;
-			Float rgb[3] = { add2.x, add2.y, add2.z };
-
-			Spectrum addSample2 = RGBSpectrum::FromRGB(rgb);
-			spectrumSample = spectrumSample + addSample2;
-			
-			
+			//Spectrum emitted = throughput * hit.material->m_emission;
+			Spectrum emitted = Spectrum::FromRGB(path_throughput * hit.material->m_emission, SpectrumType::Reflectance);
+			spectrumSample = spectrumSample + emitted;
 			
 			//L = L + path_throughput * hit.material->m_emission;
 
@@ -154,25 +150,23 @@ namespace pathtracer
 			vec3 brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
 
 			if (pdf < EPSILON) {
-				Float rgb[3];
-				spectrumSample.ToRGB(rgb);
-				return vec3(rgb[0], rgb[1], rgb[2]);
-
-
+				return spectrumSample.ToRGB();
 				// return L;
 
 			}
 			
 			float cosineTerm = abs(dot(wi, hit.shading_normal));
 
+			Spectrum brdfSpectrum = Spectrum::FromRGB(brdf, SpectrumType::Reflectance);
+
+			//throughput = throughput * (brdfSpectrum * cosineTerm) / pdf;
 			path_throughput = path_throughput * (brdf * cosineTerm) / pdf;
 
 			//Break if the throughput is 0
 			if (length(path_throughput) < EPSILON)
+			//if(throughput.IsBlack())
 			{
-				Float L[3];
-				spectrumSample.ToRGB(L);
-				return vec3(L[0], L[1], L[2]);
+				return spectrumSample.ToRGB();
 				//return L;
 			}
 			
@@ -186,9 +180,7 @@ namespace pathtracer
 
 			//Intersect the new ray
 			if (!intersect(current_ray)){
-				Float L[3];
-				spectrumSample.ToRGB(L);
-				return vec3(L[0], L[1], L[2]) + path_throughput * Lenvironment(current_ray.d);
+				return spectrumSample.ToRGB() + path_throughput * Lenvironment(current_ray.d);
 				
 				//return L + path_throughput * Lenvironment(current_ray.d);
 			}
@@ -242,9 +234,7 @@ namespace pathtracer
 		}
 		// Return the final outgoing radiance for the primary ray
 		*/
-		Float rgb[3];
-		spectrumSample.ToRGB(rgb);
-		return vec3(rgb[0], rgb[1], rgb[2]);
+		return spectrumSample.ToRGB();
 		//return L;
 	}
 

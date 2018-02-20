@@ -16,6 +16,7 @@ typedef float Float;
 #define INFINITY FLT_MAX
 #endif
 
+#define EPSILON 0.0001f
 
 class SampledSpectrum;
 class RGBSpectrum;
@@ -221,7 +222,7 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	bool IsBlack() const {
 		for (int i = 0; i < nSpectrumSamples; ++i)
-			if (c[i] != 0.) return false;
+			if (c[i] >= EPSILON) return false;
 		return true;
 	}
 
@@ -363,8 +364,9 @@ public:
 		return yy * Float(sampledLambdaEnd - sampledLambdaStart) / Float(CIE_Y_integral * nSpectralSamples);
 	}
 
+	
 	///////////////////////////////////////////////////////////////////////////////
-	//	Uses the utility functions. Cool yo.
+	//	Convert the samples to rgb values, and stores them in a provided Float[3]
 	///////////////////////////////////////////////////////////////////////////////
 	void ToRGB(Float rgb[3]) const {
 		Float xyz[3];
@@ -372,8 +374,15 @@ public:
 		XYZToRGB(xyz, rgb);
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	//	Convert the samples to a vec3 containing RGB values
+	///////////////////////////////////////////////////////////////////////////////
+	glm::vec3 ToRGB() {
+		Float rgb[3];
+		ToRGB(rgb);
+		return glm::vec3(rgb[0], rgb[1], rgb[2]);
+	}
 	
-
 	RGBSpectrum ToRGBSpectrum() const;
 	static SampledSpectrum FromRGB(const float rgb[3], SpectrumType type);
 	static SampledSpectrum FromRGB(glm::vec3, SpectrumType type);
@@ -396,8 +405,6 @@ public:
 		}
 		//	Compute RGB to spectrum functions for SampledSpectrum
 	}
-
-
 	
 
 private:
