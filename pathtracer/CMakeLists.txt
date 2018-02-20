@@ -24,6 +24,8 @@ add_executable ( pathtracer
     HDRImage.cpp
     embree.cpp
     material.cpp
+    spectrum.h
+    spectrum.cpp
     ${SHADERS}
     )
 

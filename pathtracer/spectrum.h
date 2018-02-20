@@ -3,6 +3,8 @@
 #include <iostream>
 #include <utility>
 #include <functional>
+#include <float.h>
+#include <cmath>
 #include <algorithm>    // std::sort
 
 #ifdef PBRT_FLOAT_AS_DOUBLE
