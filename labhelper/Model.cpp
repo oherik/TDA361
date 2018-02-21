@@ -119,8 +119,8 @@ namespace labhelper
 			Material material; 
 			material.m_name = m.name;
 			material.m_color = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
-			material.m_r = glm::vec3(0.5f);
-			material.m_g = glm::vec3(0.5f);
+			material.m_r = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
+			material.m_g = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
 			material.m_n = glm::vec3(rgToN(material.m_r[0], material.m_g[0]), rgToN(material.m_r[1], material.m_g[1]), rgToN(material.m_r[2], material.m_g[2]));
 			material.m_k = glm::vec3(rgToK(material.m_r[0], material.m_g[0]), rgToK(material.m_r[1], material.m_g[1]), rgToK(material.m_r[2], material.m_g[2]));
 			
