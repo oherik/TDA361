@@ -85,7 +85,7 @@ void initialize()
 	///////////////////////////////////////////////////////////////////////////
 	// Set up depth of field
 	///////////////////////////////////////////////////////////////////////////
-	pathtracer::depthOfField.lensRadius = 1.f;
+	pathtracer::depthOfField.lensRadius = 0.25f;
 	pathtracer::depthOfField.focusDistance = 10;
 
 	///////////////////////////////////////////////////////////////////////////
@@ -408,7 +408,7 @@ void gui() {
 
 	if (ImGui::CollapsingHeader("Depth of field", "dof_ch", true, true))
 	{
-		ImGui::SliderFloat("Lens radius", &pathtracer::depthOfField.lensRadius, 0.f, 10.f);
+		ImGui::SliderFloat("Lens radius", &pathtracer::depthOfField.lensRadius, 0.f, 1.f);
 	}
 
 

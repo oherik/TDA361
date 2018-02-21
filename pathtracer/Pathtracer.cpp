@@ -275,20 +275,14 @@ namespace pathtracer
 				
 				//Add some DoF
 				if (depthOfField.lensRadius > 0) {
-					vec3 ret;
+					vec2 ret;
 					concentricSampleDisk(&ret.x, &ret.y);
-
-			//Behöver rotera lite
-
-
 					vec2 lensPoint = depthOfField.lensRadius *  ret;
 					float t = focusDistance / (dot(primaryRay.d, camera_dir));
 					vec3 focusPoint = primaryRay.o + primaryRay.d * t;
-				//printf("%f;%f %f\n", ret.x, focusDistance,t);
-					primaryRay.o = primaryRay.o + camera_dir*vec3(lensPoint.x, lensPoint.y, 0);
+					primaryRay.o = primaryRay.o + camera_right*lensPoint.x + camera_up*lensPoint.y;
 					primaryRay.d = normalize(focusPoint - primaryRay.o);
 				}
-
 
 				// Intersect ray with scene
 				if (intersect(primaryRay)) {
