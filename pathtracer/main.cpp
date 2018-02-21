@@ -83,6 +83,12 @@ void initialize()
 	pathtracer::point_light.position = vec3(-10.0f, 40.0f, 10.0f);
 
 	///////////////////////////////////////////////////////////////////////////
+	// Set up depth of field
+	///////////////////////////////////////////////////////////////////////////
+	pathtracer::depthOfField.lensRadius = 1.f;
+	pathtracer::depthOfField.focusDistance = 10;
+
+	///////////////////////////////////////////////////////////////////////////
 	// Load environment map 
 	///////////////////////////////////////////////////////////////////////////
 	pathtracer::environment.map.load("../scenes/envmaps/001.hdr");
@@ -395,6 +401,15 @@ void gui() {
         ImGui::ListBox("Diffuse Term", &pathtracer::brdf.diffuseCurrent, diffuseTerms, sizeof(diffuseTerms)/sizeof(diffuseTerms[0]), 2);
         ImGui::ListBox("Geometric Term", &pathtracer::brdf.geometricCurrent, geometricTerms, sizeof(geometricTerms)/sizeof(geometricTerms[0]), 2);
     }
+
+	///////////////////////////////////////////////////////////////////////////
+	// Depth of Field
+	///////////////////////////////////////////////////////////////////////////
+
+	if (ImGui::CollapsingHeader("Depth of field", "dof_ch", true, true))
+	{
+		ImGui::SliderFloat("Lens radius", &pathtracer::depthOfField.lensRadius, 0.f, 10.f);
+	}
 
 
 	///////////////////////////////////////////////////////////////////////////

@@ -21,6 +21,7 @@ namespace pathtracer
 	Image rendered_image; 
 	PointLight point_light; 
     Brdf brdf;
+	DepthOfField depthOfField;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Restart rendering of image
@@ -231,6 +232,25 @@ namespace pathtracer
 		glm::vec3 lower_right_corner = A - C - B;
 		glm::vec3 X = 2.0f * ((A - B) - lower_right_corner);
 		glm::vec3 Y = 2.0f * ((A - C) - lower_right_corner);
+
+		// Depth of field focus, in the center
+		float focusDistance;
+		Ray centerRay;
+		centerRay.o = camera_pos;
+		centerRay.d = normalize(lower_right_corner + 0.5f * X + 0.5f * Y);
+
+		// Intersect center ray with scene
+		if (intersect(centerRay)) {
+			Intersection hit = getIntersection(centerRay);
+			focusDistance = glm::length(hit.position - camera_pos);
+		}
+		else {
+			focusDistance = 1000;
+		}
+
+		
+
+
 		// Stop here if we have as many samples as we want
 		if ((int(rendered_image.number_of_samples) > settings.max_paths_per_pixel) &&
 			(settings.max_paths_per_pixel != 0)) return;
@@ -241,6 +261,7 @@ namespace pathtracer
 			for (int x = 0; x < rendered_image.width; x++) {
 				vec3 color;
 				Ray primaryRay;
+
 				primaryRay.o = camera_pos;
 				// Create a ray that starts in the camera position and points toward
 				// the current pixel on a virtual screen. 
@@ -252,6 +273,23 @@ namespace pathtracer
 		
 				primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
 				
+				//Add some DoF
+				if (depthOfField.lensRadius > 0) {
+					vec3 ret;
+					concentricSampleDisk(&ret.x, &ret.y);
+
+			//Behöver rotera lite
+
+
+					vec2 lensPoint = depthOfField.lensRadius *  ret;
+					float t = focusDistance / (dot(primaryRay.d, camera_dir));
+					vec3 focusPoint = primaryRay.o + primaryRay.d * t;
+				//printf("%f;%f %f\n", ret.x, focusDistance,t);
+					primaryRay.o = primaryRay.o + camera_dir*vec3(lensPoint.x, lensPoint.y, 0);
+					primaryRay.d = normalize(focusPoint - primaryRay.o);
+				}
+
+
 				// Intersect ray with scene
 				if (intersect(primaryRay)) {
 					// If it hit something, evaluate the radiance from that point
@@ -263,6 +301,13 @@ namespace pathtracer
 				}
 				// Accumulate the obtained radiance to the pixels color
 				float n = float(rendered_image.number_of_samples);
+
+				if (x == rendered_image.width / 2 && y == rendered_image.height / 2)
+					rendered_image.data[y * rendered_image.width + x] =
+					rendered_image.data[y * rendered_image.width + x] * (n / (n + 1.0f)) +
+					(1.0f / (n + 1.0f)) * vec3(0.f, 0.f, 1.0f);
+				else
+
 				rendered_image.data[y * rendered_image.width + x] =
 					rendered_image.data[y * rendered_image.width + x] * (n / (n + 1.0f)) +
 					(1.0f / (n + 1.0f)) * color;

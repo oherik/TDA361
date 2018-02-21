@@ -4,6 +4,7 @@
 #include <Model.h>
 #include <omp.h>
 #include "HDRImage.h"
+#include "dof.h"
 
 #ifdef M_PI
 #undef M_PI
@@ -50,6 +51,7 @@ namespace pathtracer
 		vec3  color;
 		vec3  position;
 	} point_light;
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// Restart rendering of image
