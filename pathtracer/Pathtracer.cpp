@@ -118,9 +118,9 @@ namespace pathtracer
 			if (!occluded(lightRay)) {
 				vec3 wi = normalize(point_light.position - hit.position);
 				Spectrum lightSpectrum = Spectrum::FromRGB(point_light.color, SpectrumType::Illuminant);
-				Spectrum reflectance = Spectrum::FromRGB(mat.f(wi, hit.wo, hit.shading_normal), SpectrumType::Reflectance);
-				vec3 yo = mat.f(wi, hit.wo, hit.shading_normal);
-				float len = length(yo);
+				Spectrum reflectance = mat.f(wi, hit.wo, hit.shading_normal);
+				//Spectrum yo = mat.f(wi, hit.wo, hit.shading_normal);
+				//float len = length(yo);
 				spectrumSample = spectrumSample + lightSpectrum * reflectance * point_light.intensity_multiplier * falloff_factor * throughput * std::max(0.0f, dot(wi, hit.shading_normal));
 			}
 
@@ -130,15 +130,15 @@ namespace pathtracer
 			// Sample incoming direction
 			vec3 wi;
 			float pdf = 0.0f;
-			vec3 brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
+			Spectrum brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
 
 			if (pdf < EPSILON) {
 				return spectrumSample.ToRGB();
 			}
 			
 			float cosineTerm = abs(dot(wi, hit.shading_normal));
-			throughput = throughput * (Spectrum::FromRGB(brdf, SpectrumType::Reflectance) * cosineTerm) / pdf;
-
+			throughput = throughput * (brdf * cosineTerm) / pdf;
+				
 			//Break if the throughput is 0
 			if(throughput.IsBlack())
 			{

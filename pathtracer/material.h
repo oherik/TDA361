@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include "Pathtracer.h"
 #include "sampling.h"
+#include "spectrum.h"
 
 using namespace glm; 
 
@@ -14,10 +15,10 @@ namespace pathtracer
 	{
 	public: 
 		// Return the value of the brdf for specific directions
-		virtual vec3 f(const vec3 & wi, const vec3 & wo, const vec3 & n) = 0; 
+		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) = 0; 
 		// Sample a suitable direction and return the brdf in that direction as
 		// well as the pdf (~probability) that the direction was chosen. 
-		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) = 0;
+		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) = 0;
 	};
 
 
@@ -29,8 +30,8 @@ namespace pathtracer
 		vec3 color;
 		Transparent(float _transparency, vec3 _color) :
 			transparency(_transparency), color(_color) {}
-		virtual vec3 f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
-		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
+		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
 	};
 
 	///////////////////////////////////////////////////////////////////////////
@@ -41,8 +42,8 @@ namespace pathtracer
 	public: 
 		vec3 color;
 		Diffuse(vec3 c) : color(c) {}
-		virtual vec3 f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
-		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
+		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
 	};
 
 	///////////////////////////////////////////////////////////////////////////
@@ -56,10 +57,10 @@ namespace pathtracer
 		BRDF * refraction_layer;
 		BlinnPhong(float _shininess, float _R0, BRDF * _refraction_layer = NULL) :
 			shininess(_shininess), R0(_R0), refraction_layer(_refraction_layer) {}
-		virtual vec3 refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
-		virtual vec3 reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
-		virtual vec3 f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
-		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+		virtual Spectrum refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
+		virtual Spectrum reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
+		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
+		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
 	};
 
 	///////////////////////////////////////////////////////////////////////////
@@ -70,8 +71,8 @@ namespace pathtracer
 	public: 
 		vec3 m_n, m_k, color;
 		BlinnPhongMetal(vec3 color, vec3 m_n, vec3 m_k, float _shininess, float _R0) : color(color), m_n(m_n), m_k(m_k), BlinnPhong(_shininess, _R0) {}
-		virtual vec3 refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
-		virtual vec3 reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
+		virtual Spectrum refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
+		virtual Spectrum reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 	};
 
 	///////////////////////////////////////////////////////////////////////////
@@ -84,8 +85,8 @@ namespace pathtracer
 		BRDF * bsdf0;
 		BRDF * bsdf1;
 		LinearBlend(float _w, BRDF * a, BRDF * b) : w(_w), bsdf0(a), bsdf1(b) {};
-		virtual vec3 f(const vec3 & wi, const vec3 & wo, const vec3 & n) override; 
-		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override; 
+		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
+		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
 	};
 
 
@@ -100,8 +101,8 @@ namespace pathtracer
 		BRDF * transparency;
 		vec3 color;
 		TransparencyBlend(float _a, BRDF * _transparency, vec3 _color) : a(_a), transparency(_transparency), color(_color) {};
-		virtual vec3 f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
-		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
+		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
 	};
 
 }
