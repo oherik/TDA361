@@ -7,6 +7,17 @@ using namespace glm;
 
 namespace pathtracer
 {
+
+	///////////////////////////////////////////////////////////////////////////
+	// for any BRDF. 
+	///////////////////////////////////////////////////////////////////////////
+    extern struct Brdf {
+        int fresnelCurrent;
+        int diffuseCurrent;
+        int geometricCurrent;
+    } brdf;
+
+
 	///////////////////////////////////////////////////////////////////////////
 	// The interface for any BRDF. 
 	///////////////////////////////////////////////////////////////////////////
@@ -48,13 +59,13 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	// A Blinn Phong Dielectric Microfacet BRFD
 	///////////////////////////////////////////////////////////////////////////
-	class BlinnPhong : public BRDF
+	class CustomDefined: public BRDF
 	{
 	public: 
 		float shininess; 
 		float R0; 
 		BRDF * refraction_layer;
-		BlinnPhong(float _shininess, float _R0, BRDF * _refraction_layer = NULL) :
+		CustomDefined(float _shininess, float _R0, BRDF * _refraction_layer = NULL) :
 			shininess(_shininess), R0(_R0), refraction_layer(_refraction_layer) {}
 		virtual vec3 refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 		virtual vec3 reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
@@ -65,11 +76,11 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	// A Blinn Phong Metal Microfacet BRFD (extends the BlinnPhong class)
 	///////////////////////////////////////////////////////////////////////////
-	class BlinnPhongMetal : public BlinnPhong
+	class CustomDefinedMetal: public CustomDefined
 	{
 	public: 
 		vec3 m_n, m_k, color;
-		BlinnPhongMetal(vec3 color, vec3 m_n, vec3 m_k, float _shininess, float _R0) : color(color), m_n(m_n), m_k(m_k), BlinnPhong(_shininess, _R0) {}
+		CustomDefinedMetal(vec3 color, vec3 m_n, vec3 m_k, float _shininess, float _R0) : color(color), m_n(m_n), m_k(m_k), CustomDefined(_shininess, _R0) {}
 		virtual vec3 refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 		virtual vec3 reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 	};
@@ -103,5 +114,7 @@ namespace pathtracer
 		virtual vec3 f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
 		virtual vec3 sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
 	};
+
+	
 
 }

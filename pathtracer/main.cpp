@@ -13,6 +13,7 @@
 #include "Pathtracer.h"
 #include "embree.h"
 #include "spectrum.h"
+#include "material.h"
 
 using namespace glm;
 using namespace std; 
@@ -51,6 +52,13 @@ vector<pair<labhelper::Model *, mat4>> models;
 ///////////////////////////////////////////////////////////////////////////////
 void initialize()
 {
+
+	///////////////////////////////////////////////////////////////////////////
+	// Set initial value of BRDF 
+	///////////////////////////////////////////////////////////////////////////
+    pathtracer::brdf.fresnelCurrent = 0;
+    pathtracer::brdf.diffuseCurrent = 0;
+    pathtracer::brdf.geometricCurrent = 0;
 	///////////////////////////////////////////////////////////////////////////
 	// Load shader program
 	///////////////////////////////////////////////////////////////////////////
@@ -234,6 +242,7 @@ bool handleEvents(void)
 	return quitEvent;
 }
 
+
 float rgToN(float r_val, float g_val) {
 	float r_fix = std::min(r_val, 1.0f - EPSILON);
 	return g_val * (1.0f - r_fix) / (1.0f + r_fix) + (1.0f - g_val)  * (1.0f + sqrt(r_fix)) / (1.0f - sqrt(r_fix));
@@ -375,13 +384,10 @@ void gui() {
 	///////////////////////////////////////////////////////////////////////////
 	// BRDF modifiers 
 	///////////////////////////////////////////////////////////////////////////
-    const char* fresnelTerms[] = { "Schlick's approximation"};
+
+    const char* fresnelTerms[] { "Schlick's approximation"};
     const char* diffuseTerms[] = { "Blinn Phong", "Beckmann"};
     const char* geometricTerms[] = { "Cook-Torrance", "Smith-Schlick", "Smith-Walter"};
-
-    pathtracer::brdf.fresnelCurrent = 0;
-    pathtracer::brdf.diffuseCurrent = 0;
-    pathtracer::brdf.geometricCurrent = 0;
 
 	if (ImGui::CollapsingHeader("BRDF modifiers", "brdf_ch", true, true))
     {
