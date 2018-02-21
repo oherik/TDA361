@@ -111,16 +111,16 @@ public:
 	//	Add two spectral distributions
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum &operator+=(const CoefficientSpectrum &s2) {
-		assert(!HasNaNs());
-		assert(!s2.HasNaNs());
+		////assert(!HasNaNs());
+		//assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			c[i] += s2.c[i];
 		return *this;
 	}
 	CoefficientSpectrum operator+(const CoefficientSpectrum &s2) const {
 		CoefficientSpectrum ret = *this;
-		assert(!ret.HasNaNs());
-		assert(!s2.HasNaNs());
+		//assert(!ret.HasNaNs());
+		//assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] += s2.c[i];
 		return ret;
@@ -130,8 +130,8 @@ public:
 	//	Subtranct one spectral dsitribution from another
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum &operator-=(const CoefficientSpectrum &s2) {
-		assert(!HasNaNs());
-		assert(!s2.HasNaNs());
+		//assert(!HasNaNs());
+		//assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			c[i] -= s2.c[i];
 		return *this;
@@ -150,7 +150,7 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum operator-() const {
 		CoefficientSpectrum ret = *this;
-		assert(!ret.HasNaNs());
+		//assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] = -ret.c[i];
 		return ret;
@@ -160,16 +160,16 @@ public:
 	//	Multiply one spectral dsitribution with another
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum &operator*=(const CoefficientSpectrum &s2) {
-		assert(!HasNaNs());
-		assert(!s2.HasNaNs());
+		//assert(!HasNaNs());
+		//assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			c[i] *= s2.c[i];
 		return *this;
 	}
 	CoefficientSpectrum operator*(const CoefficientSpectrum &s2) const {
 		CoefficientSpectrum ret = *this;
-		assert(!ret.HasNaNs());
-		assert(!s2.HasNaNs());
+		//assert(!ret.HasNaNs());
+		//assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] *= s2.c[i];
 		return ret;
@@ -180,14 +180,14 @@ public:
 	//	Multiply one spectral dsitribution with a float
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum &operator*=(Float f) {
-		assert(!HasNaNs());
+		//assert(!HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			c[i] *= f;
 		return *this;
 	}
 	CoefficientSpectrum operator*(Float f) const {
 		CoefficientSpectrum ret = *this;
-		assert(!ret.HasNaNs());
+		//assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] *= f;
 		return ret;
@@ -201,16 +201,16 @@ public:
 	//	Divide one spectral distribution with another
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum &operator/=(const CoefficientSpectrum &s2) {
-		assert(!HasNaNs());
-		assert(!s2.HasNaNs());
+		//assert(!HasNaNs());
+		//assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			c[i] /= s2.c[i];
 		return *this;
 	}
 	CoefficientSpectrum operator/(const CoefficientSpectrum &s2) const {
 		CoefficientSpectrum ret = *this;
-		assert(!ret.HasNaNs());
-		assert(!s2.HasNaNs());
+		//assert(!ret.HasNaNs());
+		//assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] /= s2.c[i];
 		return ret;
@@ -220,8 +220,8 @@ public:
 	//	Equality test
 	///////////////////////////////////////////////////////////////////////////////
 	bool operator== (const CoefficientSpectrum &s2) const {
-		assert(!HasNaNs());
-		assert(!s2.HasNaNs());
+		//assert(!HasNaNs());
+		//assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			if (c[i] != s2.c[i])
 				return false;
@@ -232,8 +232,8 @@ public:
 	//	Inequality test
 	///////////////////////////////////////////////////////////////////////////////
 	bool operator!=(const CoefficientSpectrum &s2) const {
-		assert(!HasNaNs());
-		assert(!s2.HasNaNs());
+		//assert(!HasNaNs());
+		//assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i){
 			if (c[i] == s2.c[i]){
 				return false;
@@ -246,7 +246,7 @@ public:
 	//	See if it's completely black
 	///////////////////////////////////////////////////////////////////////////////
 	bool IsBlack() const {
-		assert(!HasNaNs());
+		//assert(!HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i) {
 			if (c[i] > EPSILON) return false;
 		}
@@ -258,7 +258,7 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	friend CoefficientSpectrum Sqrt(const CoefficientSpectrum &s) {
 		CoefficientSpectrum ret;
-		assert(!ret.HasNaNs());
+		//////assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] = std::sqrt(s.c[i]);
 		return ret;
@@ -269,7 +269,7 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	friend CoefficientSpectrum Sqrt(const CoefficientSpectrum &s, float exp) {
 		CoefficientSpectrum ret;
-		assert(!ret.HasNaNs());
+		//assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] = std::pow(s.c[i], exp);
 		return ret;
@@ -280,7 +280,7 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	friend CoefficientSpectrum Exp(const CoefficientSpectrum &s) {
 		CoefficientSpectrum ret;
-		assert(!ret.HasNaNs());
+		//assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] = std::exp(s.c[i]);
 		return ret;
@@ -291,7 +291,7 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum Clamp(Float low = 0, Float high = INFINITY) const {
 		CoefficientSpectrum ret;
-		assert(!ret.HasNaNs());
+		//assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i) {
 			float before = c[i];
 			ret.c[i] = ::Clamp(c[i], low, high);
@@ -403,7 +403,7 @@ public:
 	//	Convert the samples to rgb values, and stores them in a provided Float[3]
 	///////////////////////////////////////////////////////////////////////////////
 	void ToRGB(Float rgb[3]) const {
-		assert(!HasNaNs());
+		//assert(!HasNaNs());
 		Float xyz[3];
 		ToXYZ(xyz);
 		XYZToRGB(xyz, rgb);
@@ -423,7 +423,7 @@ public:
 	static SampledSpectrum FromRGB(glm::vec3, SpectrumType type);
 
 	static SampledSpectrum FromXYZ(const Float xyz[3], SpectrumType type = SpectrumType::Reflectance) {
-		assert(!HasNaNs());
+		//assert(!HasNaNs());
 		Float rgb[3];
 		XYZToRGB(xyz, rgb);
 		return FromRGB(rgb, type);
