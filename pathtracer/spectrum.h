@@ -6,6 +6,7 @@
 #include <float.h>
 #include <cmath>
 #include <algorithm>    // std::sort
+#include <glm/glm.hpp> //vec3
 
 #ifdef PBRT_FLOAT_AS_DOUBLE
 typedef double Float;
@@ -17,6 +18,7 @@ typedef float Float;
 #define INFINITY FLT_MAX
 #endif
 
+#define EPSILON 0.0001f
 
 class SampledSpectrum;
 class RGBSpectrum;
@@ -109,12 +111,16 @@ public:
 	//	Add two spectral distributions
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum &operator+=(const CoefficientSpectrum &s2) {
+		assert(!HasNaNs());
+		assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			c[i] += s2.c[i];
 		return *this;
 	}
 	CoefficientSpectrum operator+(const CoefficientSpectrum &s2) const {
 		CoefficientSpectrum ret = *this;
+		assert(!ret.HasNaNs());
+		assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] += s2.c[i];
 		return ret;
@@ -124,12 +130,16 @@ public:
 	//	Subtranct one spectral dsitribution from another
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum &operator-=(const CoefficientSpectrum &s2) {
+		assert(!HasNaNs());
+		assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			c[i] -= s2.c[i];
 		return *this;
 	}
 	CoefficientSpectrum operator-(const CoefficientSpectrum &s2) const {
 		CoefficientSpectrum ret = *this;
+		assert(!ret.HasNaNs());
+		assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] -= s2.c[i];
 		return ret;
@@ -140,6 +150,7 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum operator-() const {
 		CoefficientSpectrum ret = *this;
+		assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] = -ret.c[i];
 		return ret;
@@ -149,12 +160,16 @@ public:
 	//	Multiply one spectral dsitribution with another
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum &operator*=(const CoefficientSpectrum &s2) {
+		assert(!HasNaNs());
+		assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			c[i] *= s2.c[i];
 		return *this;
 	}
 	CoefficientSpectrum operator*(const CoefficientSpectrum &s2) const {
 		CoefficientSpectrum ret = *this;
+		assert(!ret.HasNaNs());
+		assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] *= s2.c[i];
 		return ret;
@@ -165,12 +180,14 @@ public:
 	//	Multiply one spectral dsitribution with a float
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum &operator*=(Float f) {
+		assert(!HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			c[i] *= f;
 		return *this;
 	}
 	CoefficientSpectrum operator*(Float f) const {
 		CoefficientSpectrum ret = *this;
+		assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] *= f;
 		return ret;
@@ -184,12 +201,16 @@ public:
 	//	Divide one spectral distribution with another
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum &operator/=(const CoefficientSpectrum &s2) {
+		assert(!HasNaNs());
+		assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			c[i] /= s2.c[i];
 		return *this;
 	}
 	CoefficientSpectrum operator/(const CoefficientSpectrum &s2) const {
 		CoefficientSpectrum ret = *this;
+		assert(!ret.HasNaNs());
+		assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] /= s2.c[i];
 		return ret;
@@ -199,6 +220,8 @@ public:
 	//	Equality test
 	///////////////////////////////////////////////////////////////////////////////
 	bool operator== (const CoefficientSpectrum &s2) const {
+		assert(!HasNaNs());
+		assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			if (c[i] != s2.c[i])
 				return false;
@@ -209,6 +232,8 @@ public:
 	//	Inequality test
 	///////////////////////////////////////////////////////////////////////////////
 	bool operator!=(const CoefficientSpectrum &s2) const {
+		assert(!HasNaNs());
+		assert(!s2.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i){
 			if (c[i] == s2.c[i]){
 				return false;
@@ -221,8 +246,10 @@ public:
 	//	See if it's completely black
 	///////////////////////////////////////////////////////////////////////////////
 	bool IsBlack() const {
-		for (int i = 0; i < nSpectrumSamples; ++i)
-			if (c[i] != 0.) return false;
+		assert(!HasNaNs());
+		for (int i = 0; i < nSpectrumSamples; ++i) {
+			if (c[i] > EPSILON) return false;
+		}
 		return true;
 	}
 
@@ -231,6 +258,7 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	friend CoefficientSpectrum Sqrt(const CoefficientSpectrum &s) {
 		CoefficientSpectrum ret;
+		assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] = std::sqrt(s.c[i]);
 		return ret;
@@ -241,6 +269,7 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	friend CoefficientSpectrum Sqrt(const CoefficientSpectrum &s, float exp) {
 		CoefficientSpectrum ret;
+		assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] = std::pow(s.c[i], exp);
 		return ret;
@@ -251,6 +280,7 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	friend CoefficientSpectrum Exp(const CoefficientSpectrum &s) {
 		CoefficientSpectrum ret;
+		assert(!ret.HasNaNs());
 		for (int i = 0; i < nSpectrumSamples; ++i)
 			ret.c[i] = std::exp(s.c[i]);
 		return ret;
@@ -261,8 +291,12 @@ public:
 	///////////////////////////////////////////////////////////////////////////////
 	CoefficientSpectrum Clamp(Float low = 0, Float high = INFINITY) const {
 		CoefficientSpectrum ret;
-		for (int i = 0; i < nSpectrumSamples; ++i)
+		assert(!ret.HasNaNs());
+		for (int i = 0; i < nSpectrumSamples; ++i) {
+			float before = c[i];
 			ret.c[i] = ::Clamp(c[i], low, high);
+		}
+
 		return ret;
 	}
 
@@ -364,21 +398,32 @@ public:
 		return yy * Float(sampledLambdaEnd - sampledLambdaStart) / Float(CIE_Y_integral * nSpectralSamples);
 	}
 
+	
 	///////////////////////////////////////////////////////////////////////////////
-	//	Uses the utility functions. Cool yo.
+	//	Convert the samples to rgb values, and stores them in a provided Float[3]
 	///////////////////////////////////////////////////////////////////////////////
 	void ToRGB(Float rgb[3]) const {
+		assert(!HasNaNs());
 		Float xyz[3];
 		ToXYZ(xyz);
 		XYZToRGB(xyz, rgb);
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	//	Convert the samples to a vec3 containing RGB values
+	///////////////////////////////////////////////////////////////////////////////
+	glm::vec3 ToRGB() {
+		Float rgb[3];
+		ToRGB(rgb);
+		return glm::vec3(rgb[0], rgb[1], rgb[2]);
+	}
 	
-
 	RGBSpectrum ToRGBSpectrum() const;
 	static SampledSpectrum FromRGB(const float rgb[3], SpectrumType type);
+	static SampledSpectrum FromRGB(glm::vec3, SpectrumType type);
 
 	static SampledSpectrum FromXYZ(const Float xyz[3], SpectrumType type = SpectrumType::Reflectance) {
+		assert(!HasNaNs());
 		Float rgb[3];
 		XYZToRGB(xyz, rgb);
 		return FromRGB(rgb, type);
@@ -394,10 +439,27 @@ public:
 			Y.c[i] = AverageSpectrumSamples(CIE_lambda, CIE_Y, nCIESamples, wl0, wl1);
 			Z.c[i] = AverageSpectrumSamples(CIE_lambda, CIE_Z, nCIESamples, wl0, wl1);
 		}
-		//	Compute RGB to spectrum functions for SampledSpectrum
+		//	Compute RGB to spectrum functions for SampledSpectrum, code taken from PBRT
+		for (int i = 0; i < nSpectralSamples; ++i) {
+			Float wl0 = Lerp(Float(i) / Float(nSpectralSamples), sampledLambdaStart, sampledLambdaEnd);
+			Float wl1 = Lerp(Float(i + 1) / Float(nSpectralSamples), sampledLambdaStart, sampledLambdaEnd);
+			rgbRefl2SpectWhite.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBRefl2SpectWhite, nRGB2SpectSamples, wl0, wl1);
+			rgbRefl2SpectCyan.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBRefl2SpectCyan,	nRGB2SpectSamples, wl0, wl1);
+			rgbRefl2SpectMagenta.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBRefl2SpectMagenta, nRGB2SpectSamples, wl0, wl1);
+			rgbRefl2SpectYellow.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBRefl2SpectYellow, nRGB2SpectSamples, wl0, wl1);
+			rgbRefl2SpectRed.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBRefl2SpectRed, nRGB2SpectSamples, wl0, wl1);
+			rgbRefl2SpectGreen.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBRefl2SpectGreen, nRGB2SpectSamples, wl0, wl1);
+			rgbRefl2SpectBlue.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBRefl2SpectBlue, nRGB2SpectSamples, wl0, wl1);
+			
+			rgbIllum2SpectWhite.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBIllum2SpectWhite, nRGB2SpectSamples, wl0, wl1);
+			rgbIllum2SpectCyan.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBIllum2SpectCyan, nRGB2SpectSamples, wl0, wl1);
+			rgbIllum2SpectMagenta.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBIllum2SpectMagenta, nRGB2SpectSamples, wl0, wl1);
+			rgbIllum2SpectYellow.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBIllum2SpectYellow, nRGB2SpectSamples, wl0, wl1);
+			rgbIllum2SpectRed.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBIllum2SpectRed, nRGB2SpectSamples, wl0, wl1);
+			rgbIllum2SpectGreen.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBIllum2SpectGreen, nRGB2SpectSamples, wl0, wl1);
+			rgbIllum2SpectBlue.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBIllum2SpectBlue, nRGB2SpectSamples, wl0, wl1);
+		}
 	}
-
-
 	
 
 private:

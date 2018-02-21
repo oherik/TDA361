@@ -61,14 +61,14 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	vec3 Li(Ray & primary_ray) {
 		Spectrum spectrumSample;
-
-		//vec3 L = vec3(0.0f);
-		vec3 path_throughput = vec3(1.0f);
+		const vec3 fullLight = vec3(1.0f, 1.0f, 1.0f);
+		Spectrum throughput = Spectrum::FromRGB(fullLight, SpectrumType::Illuminant);
 		Ray current_ray = primary_ray;
 		vec3 last_position = vec3(0.0f);
 
 		//Task 5: bounce it up
 		for (int i = 0; i < settings.max_bounces; i++){
+		
 
 			// Get the intersection information from the ray
 			Intersection hit = getIntersection(current_ray);
@@ -93,8 +93,6 @@ namespace pathtracer
 				else {
 					a = T;
 				}
-				//float a_new = 10*(hit.material->m_transparency)/dist; // /5 is a bit arbitrary
-				//a = T;// fmin(1.0f, a_new);
 			}
 
 			TransparencyBlend transparency_blend(a, &transparent, hit.material->m_color);
@@ -118,56 +116,34 @@ namespace pathtracer
 			const float falloff_factor = 1.0f / (distance_to_light*distance_to_light);
 			Ray lightRay(hit.position + EPSILON * hit.geometry_normal, normalize(point_light.position - hit.position), 0.0f, distance_to_light);
 
-			if (!occluded(lightRay)){
-				vec3 Li = point_light.intensity_multiplier * point_light.color * falloff_factor;
+			if (!occluded(lightRay)) {
 				vec3 wi = normalize(point_light.position - hit.position);
-
-				vec3 add = path_throughput * (mat.f(wi, hit.wo, hit.shading_normal) * Li * std::max(0.0f, dot(wi, hit.shading_normal)));
-				Float rgb[3] = { add.x, add.y, add.z };
-				
-				Spectrum addSample = Spectrum::FromRGB(rgb, SpectrumType::Reflectance);
-				spectrumSample = spectrumSample + addSample;
-
-				//L = L + path_throughput * (mat.f(wi, hit.wo, hit.shading_normal) * Li * std::max(0.0f, dot(wi, hit.shading_normal)));
+				Spectrum lightSpectrum = Spectrum::FromRGB(point_light.color, SpectrumType::Illuminant);
+				Spectrum reflectance = Spectrum::FromRGB(mat.f(wi, hit.wo, hit.shading_normal), SpectrumType::Reflectance);
+				vec3 yo = mat.f(wi, hit.wo, hit.shading_normal);
+				float len = length(yo);
+				spectrumSample = spectrumSample + lightSpectrum * reflectance * point_light.intensity_multiplier * falloff_factor * throughput * std::max(0.0f, dot(wi, hit.shading_normal));
 			}
 
 			// Emitted radiance from intersection
-			vec3 add2 = path_throughput * hit.material->m_emission;
-			Float rgb[3] = { add2.x, add2.y, add2.z };
-
-			Spectrum addSample2 = RGBSpectrum::FromRGB(rgb);
-			spectrumSample = spectrumSample + addSample2;
+			spectrumSample = spectrumSample + throughput * hit.material->m_emission;
 			
-			
-			
-			//L = L + path_throughput * hit.material->m_emission;
-
 			// Sample incoming direction
 			vec3 wi;
 			float pdf = 0.0f;
 			vec3 brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
 
 			if (pdf < EPSILON) {
-				Float rgb[3];
-				spectrumSample.ToRGB(rgb);
-				return vec3(rgb[0], rgb[1], rgb[2]);
-
-
-				// return L;
-
+				return spectrumSample.ToRGB();
 			}
 			
 			float cosineTerm = abs(dot(wi, hit.shading_normal));
-
-			path_throughput = path_throughput * (brdf * cosineTerm) / pdf;
+			throughput = throughput * (Spectrum::FromRGB(brdf, SpectrumType::Reflectance) * cosineTerm) / pdf;
 
 			//Break if the throughput is 0
-			if (length(path_throughput) < EPSILON)
+			if(throughput.IsBlack())
 			{
-				Float L[3];
-				spectrumSample.ToRGB(L);
-				return vec3(L[0], L[1], L[2]);
-				//return L;
+				return spectrumSample.ToRGB();
 			}
 			
 			//Next ray
@@ -180,11 +156,7 @@ namespace pathtracer
 
 			//Intersect the new ray
 			if (!intersect(current_ray)){
-				Float L[3];
-				spectrumSample.ToRGB(L);
-				return vec3(L[0], L[1], L[2]) + path_throughput * Lenvironment(current_ray.d);
-				
-				//return L + path_throughput * Lenvironment(current_ray.d);
+				return spectrumSample.ToRGB() + throughput.ToRGB() * Lenvironment(current_ray.d);
 			}
 
 		}
@@ -236,9 +208,7 @@ namespace pathtracer
 		}
 		// Return the final outgoing radiance for the primary ray
 		*/
-		Float rgb[3];
-		spectrumSample.ToRGB(rgb);
-		return vec3(rgb[0], rgb[1], rgb[2]);
+		return spectrumSample.ToRGB();
 		//return L;
 	}
 
