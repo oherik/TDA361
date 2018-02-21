@@ -3,6 +3,8 @@
 #include <iostream>
 #include <utility>
 #include <functional>
+#include <float.h>
+#include <cmath>
 #include <algorithm>    // std::sort
 #include <glm/glm.hpp> //vec3
 

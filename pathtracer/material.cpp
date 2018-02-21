@@ -5,15 +5,26 @@
 namespace pathtracer
 {
 
-    //Fresnell terms
+    //Fresnel terms
+    //Schlick linear approx
+    float schlickFres(float R0, float whdotwi){
+		return R0 + (1 - R0)*pow(1 - whdotwi, 5);
+    }
 
-    //Schlik linear approx
-    float schlickFres(float R0, vec3 wh, vec3 wi){
-		return R0 + (1 - R0)*pow(1 - dot(wh, wi), 5);
+
+    //Decides what calculation to produce depending on the the Diffuese model choosen.
+    float fresnel(float R0, float whdotwi){
+
+        switch(brdf.fresnelCurrent) {
+            case 0: return schlickFres(R0, whdotwi);
+                break;
+            default: 
+                return 0;
+                break;
+        }
     }
 
     //Diffuse terms
-
     //Blinn Phong
     float blinnPhongDiff(float shininess, float ndotwh){
 		return (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
@@ -28,8 +39,33 @@ namespace pathtracer
         return exp((ndotwh2 - 1)/(m2 * ndotwh2))/(M_PI * m2 * ndotwh2 * ndotwh2);
     }
 
+    //Decides what calculation to produce depending on the the Diffuese model choosen.
+    float diffuse(float shininess, float ndotwh){
+
+        switch(brdf.diffuseCurrent) {
+            case 0: 
+                {
+                    return blinnPhongDiff(shininess, ndotwh);
+                    break;
+                }
+            case 1:
+                { 
+                    float m = sqrt(2.0f/(shininess+2));
+                    return beckDiff(ndotwh, m);
+                    break;
+                }
+            default:
+                {
+                    return 0;
+                    break;
+                }
+        }
+    }
+
+
 
     //Geometric terms
+    
 
     //Cook-torrance
     float cookGeom(float ndotwh, float ndotwo, float wodotwh, float ndotwi){
@@ -43,7 +79,7 @@ namespace pathtracer
     }
 
     //Smith-Walter
-    float smithWalterGeom(float ndotwo, float ndotwi, float wo, float wi, float wh, float n, float m){
+    float smithWalterGeom(float ndotwo, float ndotwi, float m, vec3 wo, vec3 wi, vec3 wh, vec3 n){
         if (dot(wo,wh)/dot(wo,n) <= 0 || dot(wi,wh)/dot(wi,n) <= 0){
             return 0;
         }
@@ -68,7 +104,33 @@ namespace pathtracer
         return first * second;
     }
 
-    //
+    //Decides what calculation to produce depending on the the geometric choosen.
+    float geometric(float ndotwh, float ndotwo, float wodotwh, float ndotwi, float shininess, vec3 wo, vec3 wi, vec3 wh, vec3 n){
+        switch(brdf.geometricCurrent) {
+            case 0: 
+                {
+                    return cookGeom(ndotwh, ndotwo, wodotwh, ndotwi);
+                    break;       
+                }
+            case 1: 
+                {
+                    float m = sqrt(2.0f/(shininess+2));
+                    float k = m * sqrt(2/M_PI);
+                    return smithSchlickGeom(ndotwo, ndotwi, k);
+                    break;
+                }
+           case 2:
+                {
+                    float m = sqrt(2.0f/(shininess+2));
+                    return smithWalterGeom(ndotwo, ndotwi, m, wo, wi, wh, n);
+                }
+           default:
+                {
+                    return 0;
+                    break;
+                }
+        }
+    }
 
 	///////////////////////////////////////////////////////////////////////////
 	// A Lambertian (diffuse) material
@@ -138,7 +200,7 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	// A Blinn Phong Dielectric Microfacet BRFD
 	///////////////////////////////////////////////////////////////////////////
-	Spectrum BlinnPhong::refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
+	Spectrum CustomDefined::refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
 		vec3 wh = normalize(wi + wo);
 		float F_wi = R0 + (1 - R0)*pow(1 - dot(wh, wi), 5);
 		if (refraction_layer == NULL){
@@ -146,7 +208,8 @@ namespace pathtracer
 		}
 		return (1-F_wi)*refraction_layer->f(wi, wo, n);
 	}
-	Spectrum BlinnPhong::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
+
+	Spectrum CustomDefined::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
 		vec3 wh = normalize(wi + wo);
 	
 		float whdotwi = max(0.0f, dot(wh, wi));
@@ -155,9 +218,9 @@ namespace pathtracer
 		float ndotwi = max(0.0f , dot(n, wi));
 		float ndotwo = max(0.0f, dot(n, wo));
 
-		float F_wi = R0 + (1.0f - R0)*pow(1.0f - whdotwi, 5.0f);
-		float D_wh = (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
-		float G_wiwo = min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
+        float F_wi = fresnel(R0, whdotwi);
+        float D_wh = diffuse(shininess, ndotwh);
+        float G_wiwo = geometric(ndotwh, ndotwo, wodotwh, ndotwi, shininess, wo, wi, wh, n);
 
 		float den = (4.0f * ndotwo*ndotwi);
 
@@ -167,12 +230,11 @@ namespace pathtracer
 
 	}
 
-	Spectrum BlinnPhong::f(const vec3 & wi, const vec3 & wo, const vec3 & n) {
+	Spectrum CustomDefined::f(const vec3 & wi, const vec3 & wo, const vec3 & n) {
 		return reflection_brdf(wi, wo, n) + refraction_brdf(wi, wo, n); 
 	}
 
-	Spectrum BlinnPhong::sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {
-		
+	Spectrum CustomDefined::sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {
 		if (randf() < 0.5){
 			vec3 tangent = normalize(perpendicular(n));
 			vec3 bitangent = normalize(cross(tangent, n));
@@ -221,9 +283,10 @@ namespace pathtracer
 	}
 
 	///////////////////////////////////////////////////////////////////////////
-	// A Blinn Phong Metal Microfacet BRFD (extends the BlinnPhong class)
-	Spectrum BlinnPhongMetal::refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
-		return Spectrum(); 
+	// A Blinn Phong Metal Microfacet BRFD (extends the BlinnPhong class
+	///////////////////////////////////////////////////////////////////////////
+	Spectrum CustomDefinedMetal::refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
+		return Spectrum();
 	}
 
 	float exactReflection(float n, float k, float cost) {
@@ -238,7 +301,8 @@ namespace pathtracer
 			));
 	}
 
-	Spectrum BlinnPhongMetal::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
+
+	Spectrum CustomDefinedMetal::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
 		//Koppar
         //float m_n []= { 0.294f, 1.0697f, 1.2404f };
 		//float m_k [] = { 3.2456f, 2.6866f, 2.3929f };
@@ -276,8 +340,14 @@ namespace pathtracer
 		float F_wi_2 = exactReflection(m_n[1], m_k[1], cost);
 		float F_wi_3 = exactReflection(m_n[2], m_k[2], cost);
 
-		float D_wh = (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
-		float G_wiwo = min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
+        float F_wi = fresnel(R0, whdotwi);
+        float D_wh = diffuse(shininess, ndotwh);
+        float G_wiwo = geometric(ndotwh, ndotwo, wodotwh, ndotwi, shininess, wo, wi, wh, n);
+
+        //Old below 
+		//float D_wh = (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
+		//float G_wiwo = min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
+
 		float den = (4.0f * ndotwo*ndotwi);
 
 		if (den < EPSILON) return Spectrum();
