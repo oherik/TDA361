@@ -59,6 +59,7 @@ void initialize()
     pathtracer::brdf.fresnelCurrent = 0;
     pathtracer::brdf.diffuseCurrent = 0;
     pathtracer::brdf.geometricCurrent = 0;
+
 	///////////////////////////////////////////////////////////////////////////
 	// Load shader program
 	///////////////////////////////////////////////////////////////////////////
@@ -74,6 +75,7 @@ void initialize()
 	#else
 	pathtracer::settings.subsampling = 4;
 	#endif
+	pathtracer::settings.supersampling_method = 1;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Set up light
@@ -85,7 +87,7 @@ void initialize()
 	///////////////////////////////////////////////////////////////////////////
 	// Set up depth of field
 	///////////////////////////////////////////////////////////////////////////
-	pathtracer::depthOfField.lensRadius = 0.25f;
+	pathtracer::depthOfField.lensRadius = 0.25f; // 0 = disable
 	pathtracer::depthOfField.focusDistance = 10;
 
 	///////////////////////////////////////////////////////////////////////////
@@ -97,9 +99,9 @@ void initialize()
 	///////////////////////////////////////////////////////////////////////////
 	// Load .obj models to scene
 	///////////////////////////////////////////////////////////////////////////
-	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, 0.0f))));
-	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), mat4(1.0f)));
-	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/BigSphere.obj"), mat4(1.0f)));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, 0.0f))));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), mat4(1.0f)));
+	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/BigSphere.obj"), mat4(1.0f)));
 	mat4 asd = mat4(1.0f);
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/island.obj"), translate(
 	//	glm::rotate(asd, (glm::mediump_float)1.56, glm::vec3(1.0f, 0.0f, 0.0f))
@@ -408,9 +410,8 @@ void gui() {
 
 	if (ImGui::CollapsingHeader("Depth of field", "dof_ch", true, true))
 	{
-		ImGui::SliderFloat("Lens radius", &pathtracer::depthOfField.lensRadius, 0.f, 1.f);
+		ImGui::SliderFloat("Lens radius (0 to disable)", &pathtracer::depthOfField.lensRadius, 0.f, 1.f);
 	}
-
 
 	///////////////////////////////////////////////////////////////////////////
 	// Light and environment map
@@ -425,11 +426,14 @@ void gui() {
 	///////////////////////////////////////////////////////////////////////////
 	// Pathtracer settings
 	///////////////////////////////////////////////////////////////////////////
+	const char* superSamplingMethods[]{ "None", "Adaptive supersampling" };
 	if (ImGui::CollapsingHeader("Pathtracer", "pathtracer_ch", true, true))
 	{
 		ImGui::SliderInt("Subsampling", &pathtracer::settings.subsampling, 1, 16);
+		ImGui::ListBox("Supersampling method", &pathtracer::settings.supersampling_method, superSamplingMethods, sizeof(superSamplingMethods) / sizeof(superSamplingMethods[0]), 2);
 		ImGui::SliderInt("Max Bounces", &pathtracer::settings.max_bounces, 0, 16);
 		ImGui::SliderInt("Max Paths Per Pixel", &pathtracer::settings.max_paths_per_pixel, 0, 1024);
+
 	}
 
 	///////////////////////////////////////////////////////////////////////////

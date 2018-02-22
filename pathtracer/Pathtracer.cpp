@@ -48,19 +48,19 @@ namespace pathtracer
 	// Return the radiance from a certain direction wi from the environment
 	// map. 
 	///////////////////////////////////////////////////////////////////////////
-	vec3 Lenvironment(const vec3 & wi) {
+	Spectrum Lenvironment(const vec3 & wi) {
 		const float theta = acos(std::max(-1.0f, std::min(1.0f, wi.y)));
 		float phi = atan(wi.z, wi.x);
 		if (phi < 0.0f) phi = phi + 2.0f * M_PI;
 		vec2 lookup = vec2(phi / (2.0 * M_PI), theta / M_PI);
-		return environment.multiplier * environment.map.sample(lookup.x, lookup.y);
+		return environment.multiplier * Spectrum::FromRGB(environment.map.sample(lookup.x, lookup.y), SpectrumType::Illuminant);
 	}
 
 	///////////////////////////////////////////////////////////////////////////
 	// Calculate the radiance going from one point (r.hitPosition()) in one 
 	// direction (-r.d), through path tracing.  
 	///////////////////////////////////////////////////////////////////////////
-	vec3 Li(Ray & primary_ray) {
+	Spectrum Li(Ray & primary_ray) {
 		Spectrum spectrumSample;
 		const vec3 fullLight = vec3(1.0f, 1.0f, 1.0f);
 		Spectrum throughput = Spectrum::FromRGB(fullLight, SpectrumType::Illuminant);
@@ -135,7 +135,7 @@ namespace pathtracer
 			Spectrum brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
 
 			if (pdf < EPSILON) {
-				return spectrumSample.ToRGB();
+				return spectrumSample;
 			}
 			
 			float cosineTerm = abs(dot(wi, hit.shading_normal));
@@ -144,7 +144,7 @@ namespace pathtracer
 			//Break if the throughput is 0
 			if(throughput.IsBlack())
 			{
-				return spectrumSample.ToRGB();
+				return spectrumSample;
 			}
 			
 			//Next ray
@@ -157,7 +157,7 @@ namespace pathtracer
 
 			//Intersect the new ray
 			if (!intersect(current_ray)){
-				return spectrumSample.ToRGB() + throughput.ToRGB() * Lenvironment(current_ray.d);
+				return spectrumSample + throughput * Lenvironment(current_ray.d);
 			}
 
 		}
@@ -209,7 +209,7 @@ namespace pathtracer
 		}
 		// Return the final outgoing radiance for the primary ray
 		*/
-		return spectrumSample.ToRGB();
+		return spectrumSample;
 		//return L;
 	}
 
@@ -284,15 +284,23 @@ namespace pathtracer
 					primaryRay.d = normalize(focusPoint - primaryRay.o);
 				}
 
-				// Intersect ray with scene
-				if (intersect(primaryRay)) {
-					// If it hit something, evaluate the radiance from that point
-					color = Li(primaryRay);
-				}
-				else {
-					// Otherwise evaluate environment
-					color = Lenvironment(primaryRay.d);
-				}
+				//if (settings.supersampling_method == 0) { // No supersampling
+					// Intersect ray with scene
+					if (intersect(primaryRay)) {
+						// If it hit something, evaluate the radiance from that point
+						color = Li(primaryRay).ToRGB();
+					}
+					else {
+						// Otherwise evaluate environment
+						color = Lenvironment(primaryRay.d).ToRGB();
+					}
+			//	}
+				//else {
+
+				//}
+				
+
+
 				// Accumulate the obtained radiance to the pixels color
 				float n = float(rendered_image.number_of_samples);
 

@@ -5,6 +5,7 @@
 #include <omp.h>
 #include "HDRImage.h"
 #include "dof.h"
+#include "supersampling.h"
 
 #ifdef M_PI
 #undef M_PI
@@ -16,6 +17,13 @@ using namespace glm;
 
 namespace pathtracer
 {
+	///////////////////////////////////////////////////////////////////////////////
+	// For DoF stuff
+	///////////////////////////////////////////////////////////////////////////////
+	extern struct DepthOfField {
+		float lensRadius;
+		float focusDistance;
+	} depthOfField;
 
     ///////////////////////////////////////////////////////////////////////////////
 	// Path Tracer settings
@@ -24,6 +32,7 @@ namespace pathtracer
 		int subsampling;
 		int max_bounces;
 		int max_paths_per_pixel;
+		int supersampling_method;
 	} settings; 
 
 	///////////////////////////////////////////////////////////////////////////////
