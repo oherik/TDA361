@@ -250,6 +250,59 @@ namespace pathtracer
 		}
 	}
 
+	float averageError(vec3 a, vec3 b) {
+		float xDiff = abs(a.x - b.x);
+		float yDiff = abs(a.y - b.y);
+		float zDiff = abs(a.z - b.z);
+		
+		return (xDiff + yDiff + zDiff) / 3.f;
+	}
+
+	// Let's get some AASS in this app
+	vec3 adaptiveSupersampling(vec3 camera_pos, vec3 camera_dir, vec3 camera_right, vec3 camera_up, float focusDistance, vec3 lower_right_corner, float x, float y, vec3 X, vec3 Y, float size = 1.f, vec3 firstQp = vec3(0.f), vec3 secondQp = vec3(0.f), vec3 thirdQp = vec3(0.f), vec3 fourthQp = vec3(0.f)) {
+		static float epsilon = 0.05f;
+		
+		float sideStep = size / 2.f;
+		
+		vec3 centerColor = getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x, y, X, Y);
+		
+		if (size < 0.25)
+			return centerColor;
+
+		vec3 firstQ = length(firstQp) == 0 ? getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner,x+sideStep, y+sideStep, X, Y) : firstQp;
+		vec3 secondQ = length(secondQp) == 0 ?  getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + sideStep, y - sideStep, X, Y): secondQp;
+		vec3 thirdQ = length(thirdQp) == 0 ?  getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - sideStep, y - sideStep, X, Y): thirdQp;
+		vec3 fourthQ = length(fourthQp) == 0 ?  getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - sideStep, y + sideStep, X, Y): fourthQp;
+
+		vec3 color = vec3(0.f);
+		//printf("%f \n", averageError(centerColor, firstQ));
+		if (averageError(centerColor, firstQ) < epsilon) {
+			color += (centerColor + firstQ) / 8.f;
+		} else {
+			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + 0.5f*sideStep, y + 0.5f*sideStep, X, Y, 0.5f*size,firstQ, vec3(0.f),centerColor, vec3(0.f));
+		}
+		if (averageError(centerColor, secondQ) < epsilon) {
+			color += (centerColor + secondQ) / 8.f;
+		}
+		else {
+			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + 0.5f*sideStep, y - 0.5f*sideStep, X, Y, 0.5f*size, vec3(0.f), secondQ, vec3(0.f), centerColor);
+		}
+		if (averageError(centerColor, thirdQ) < epsilon) {
+			color += (centerColor + thirdQ) / 8.f;
+		}
+		else {
+			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - 0.5f*sideStep, y - 0.5f*sideStep, X, Y, 0.5f*size, centerColor, vec3(0.f), thirdQ, vec3(0.f));
+		}
+		if (averageError(centerColor, fourthQ) < epsilon) {
+			color += (centerColor + fourthQ) / 8.f;
+		}
+		else {
+			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - 0.5f*sideStep, y + 0.5f*sideStep, X, Y, 0.5f*size, vec3(0.f), centerColor, vec3(0.f), fourthQ);
+		}
+		
+		return color;// getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y);
+	}
+
 	///////////////////////////////////////////////////////////////////////////
 	// Trace one path per pixel and accumulate the result in an image
 	///////////////////////////////////////////////////////////////////////////
@@ -296,9 +349,13 @@ namespace pathtracer
 #pragma omp parallel for
 		for (int y = 0; y < rendered_image.height; y++) {
 			for (int x = 0; x < rendered_image.width; x++) {
-				
-				vec3 color = getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y);
+				vec3 color;
+				if(settings.supersampling_method == 0)
+					color = getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y);
 
+				else
+					color = adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y);
+				
 				// Accumulate the obtained radiance to the pixels color
 				float n = float(rendered_image.number_of_samples);
 
