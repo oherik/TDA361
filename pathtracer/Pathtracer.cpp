@@ -213,6 +213,43 @@ namespace pathtracer
 		//return L;
 	}
 
+
+	// Helper method for getting the color of a fancy ray thing
+	vec3 getRayColor(vec3 camera_pos, vec3 camera_dir, vec3 camera_right, vec3 camera_up, float focusDistance, vec3 lower_right_corner, float x, float y, vec3 X, vec3 Y) {
+		vec3 color;
+		Ray primaryRay;
+
+		primaryRay.o = camera_pos;
+		// Create a ray that starts in the camera position and points toward
+		// the current pixel on a virtual screen. 
+		vec2 screenCoord = vec2(x / float(rendered_image.width), y / float(rendered_image.height));
+
+		//Task 1: introduce some randomness and jittering
+		screenCoord.x += (pathtracer::randf() - 0.5) / rendered_image.width;
+		screenCoord.y += (pathtracer::randf() - 0.5) / rendered_image.height;
+
+		primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+
+		//Add some DoF
+		if (depthOfField.lensRadius > 0) {
+			vec2 ret;
+			concentricSampleDisk(&ret.x, &ret.y);
+			vec2 lensPoint = depthOfField.lensRadius *  ret;
+			float t = focusDistance / (dot(primaryRay.d, camera_dir));
+			vec3 focusPoint = primaryRay.o + primaryRay.d * t;
+			primaryRay.o = primaryRay.o + camera_right*lensPoint.x + camera_up*lensPoint.y;
+			primaryRay.d = normalize(focusPoint - primaryRay.o);
+		}
+		if (intersect(primaryRay)) {
+			// If it hit something, evaluate the radiance from that point
+			return Li(primaryRay).ToRGB();
+		}
+		else {
+			// Otherwise evaluate environment
+			return Lenvironment(primaryRay.d).ToRGB();
+		}
+	}
+
 	///////////////////////////////////////////////////////////////////////////
 	// Trace one path per pixel and accumulate the result in an image
 	///////////////////////////////////////////////////////////////////////////
@@ -259,47 +296,8 @@ namespace pathtracer
 #pragma omp parallel for
 		for (int y = 0; y < rendered_image.height; y++) {
 			for (int x = 0; x < rendered_image.width; x++) {
-				vec3 color;
-				Ray primaryRay;
-
-				primaryRay.o = camera_pos;
-				// Create a ray that starts in the camera position and points toward
-				// the current pixel on a virtual screen. 
-				vec2 screenCoord = vec2(float(x) / float(rendered_image.width), float(y) / float(rendered_image.height));
 				
-				//Task 1: introduce some randomness and jittering
-				screenCoord.x += (pathtracer::randf() -0.5) / rendered_image.width;
-				screenCoord.y += (pathtracer::randf() - 0.5) / rendered_image.height;
-		
-				primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
-				
-				//Add some DoF
-				if (depthOfField.lensRadius > 0) {
-					vec2 ret;
-					concentricSampleDisk(&ret.x, &ret.y);
-					vec2 lensPoint = depthOfField.lensRadius *  ret;
-					float t = focusDistance / (dot(primaryRay.d, camera_dir));
-					vec3 focusPoint = primaryRay.o + primaryRay.d * t;
-					primaryRay.o = primaryRay.o + camera_right*lensPoint.x + camera_up*lensPoint.y;
-					primaryRay.d = normalize(focusPoint - primaryRay.o);
-				}
-
-				//if (settings.supersampling_method == 0) { // No supersampling
-					// Intersect ray with scene
-					if (intersect(primaryRay)) {
-						// If it hit something, evaluate the radiance from that point
-						color = Li(primaryRay).ToRGB();
-					}
-					else {
-						// Otherwise evaluate environment
-						color = Lenvironment(primaryRay.d).ToRGB();
-					}
-			//	}
-				//else {
-
-				//}
-				
-
+				vec3 color = getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y);
 
 				// Accumulate the obtained radiance to the pixels color
 				float n = float(rendered_image.number_of_samples);
@@ -317,4 +315,5 @@ namespace pathtracer
 		}
 		rendered_image.number_of_samples += 1;
 	}
+
 };

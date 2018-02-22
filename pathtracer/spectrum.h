@@ -254,6 +254,17 @@ public:
 	}
 
 	///////////////////////////////////////////////////////////////////////////////
+	//	Get a mean diff between two spectrums
+	///////////////////////////////////////////////////////////////////////////////
+	Float diff(const CoefficientSpectrum &s) const {
+		Float sum = 0;
+		for (int i = 0; i < nSpectralSamples; ++i) {
+			sum += c[i]-s.c[i];
+		}
+		return sum/ nSpectralSamples;
+	}
+
+	///////////////////////////////////////////////////////////////////////////////
 	//	Square root of a spectrum
 	///////////////////////////////////////////////////////////////////////////////
 	friend CoefficientSpectrum Sqrt(const CoefficientSpectrum &s) {
@@ -397,7 +408,6 @@ public:
 		}	
 		return yy * Float(sampledLambdaEnd - sampledLambdaStart) / Float(CIE_Y_integral * nSpectralSamples);
 	}
-
 	
 	///////////////////////////////////////////////////////////////////////////////
 	//	Convert the samples to rgb values, and stores them in a provided Float[3]
