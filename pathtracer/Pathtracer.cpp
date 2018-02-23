@@ -19,6 +19,7 @@ namespace pathtracer
 	Settings settings;
 	Environment environment; 
 	Image rendered_image; 
+	Image supersample_image;
 	PointLight point_light; 
     Brdf brdf;
 	DepthOfField depthOfField;
@@ -30,6 +31,7 @@ namespace pathtracer
 	{
 		// No need to clear image, 
 		rendered_image.number_of_samples = 0; 
+		supersample_image.number_of_samples = 0;
 	}
 
 	///////////////////////////////////////////////////////////////////////////
@@ -41,6 +43,11 @@ namespace pathtracer
 		rendered_image.width = w / settings.subsampling; 
 		rendered_image.height = h / settings.subsampling; 
 		rendered_image.data.resize(rendered_image.width * rendered_image.height);
+
+		supersample_image.width = rendered_image.width + 1;
+		supersample_image.height = rendered_image.height + 1;
+		supersample_image.data.resize(supersample_image.width * supersample_image.height);
+
 		restart(); 
 	}
 
@@ -213,43 +220,6 @@ namespace pathtracer
 		//return L;
 	}
 
-
-	// Helper method for getting the color of a fancy ray thing
-	vec3 getRayColor(vec3 camera_pos, vec3 camera_dir, vec3 camera_right, vec3 camera_up, float focusDistance, vec3 lower_right_corner, float x, float y, vec3 X, vec3 Y) {
-		vec3 color;
-		Ray primaryRay;
-
-		primaryRay.o = camera_pos;
-		// Create a ray that starts in the camera position and points toward
-		// the current pixel on a virtual screen. 
-		vec2 screenCoord = vec2(x / float(rendered_image.width), y / float(rendered_image.height));
-
-		//Task 1: introduce some randomness and jittering
-		screenCoord.x += (pathtracer::randf() - 0.5) / rendered_image.width;
-		screenCoord.y += (pathtracer::randf() - 0.5) / rendered_image.height;
-
-		primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
-
-		//Add some DoF
-		if (depthOfField.lensRadius > 0) {
-			vec2 ret;
-			concentricSampleDisk(&ret.x, &ret.y);
-			vec2 lensPoint = depthOfField.lensRadius *  ret;
-			float t = focusDistance / (dot(primaryRay.d, camera_dir));
-			vec3 focusPoint = primaryRay.o + primaryRay.d * t;
-			primaryRay.o = primaryRay.o + camera_right*lensPoint.x + camera_up*lensPoint.y;
-			primaryRay.d = normalize(focusPoint - primaryRay.o);
-		}
-		if (intersect(primaryRay)) {
-			// If it hit something, evaluate the radiance from that point
-			return Li(primaryRay).ToRGB();
-		}
-		else {
-			// Otherwise evaluate environment
-			return Lenvironment(primaryRay.d).ToRGB();
-		}
-	}
-
 	float averageError(vec3 a, vec3 b) {
 		float xDiff = abs(a.x - b.x);
 		float yDiff = abs(a.y - b.y);
@@ -260,44 +230,126 @@ namespace pathtracer
 
 	// Let's get some AASS in this app
 	vec3 adaptiveSupersampling(vec3 camera_pos, vec3 camera_dir, vec3 camera_right, vec3 camera_up, float focusDistance, vec3 lower_right_corner, float x, float y, vec3 X, vec3 Y, float size = 1.f, vec3 firstQp = vec3(0.f), vec3 secondQp = vec3(0.f), vec3 thirdQp = vec3(0.f), vec3 fourthQp = vec3(0.f)) {
-		static float epsilon = 0.05f;
+		static float epsilon = 0.02f;
+		static float minSize = 0.25f;
 		
-		float sideStep = size / 2.f;
-		
-		vec3 centerColor = getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x, y, X, Y);
-		
-		if (size < 0.25)
-			return centerColor;
+		float sideStep = 0.5f *size ;
+		vec3 centerColor, firstQuadrant, secondQuadrant, thirdQuadrant, fourthQuadrant;
+		Ray primaryRay;
+		primaryRay.o = camera_pos;
+		vec2 screenCoord = vec2(x / float(rendered_image.width), y / float(rendered_image.height));
 
-		vec3 firstQ = length(firstQp) == 0 ? getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner,x+sideStep, y+sideStep, X, Y) : firstQp;
-		vec3 secondQ = length(secondQp) == 0 ?  getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + sideStep, y - sideStep, X, Y): secondQp;
-		vec3 thirdQ = length(thirdQp) == 0 ?  getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - sideStep, y - sideStep, X, Y): thirdQp;
-		vec3 fourthQ = length(fourthQp) == 0 ?  getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - sideStep, y + sideStep, X, Y): fourthQp;
+		primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+		if (intersect(primaryRay)) {
+			// If it hit something, evaluate the radiance from that point
+			centerColor = Li(primaryRay).ToRGB();
+		}else {
+			// Otherwise evaluate environment
+			centerColor = Lenvironment(primaryRay.d).ToRGB();
+		}
+
+		if (size < minSize) {
+			return centerColor;
+		}
+			
+		//	Shoot new rays if necessary
+		if (length(firstQp) > 0) {
+			firstQuadrant = firstQp;
+		}
+		else {
+			Ray firstQuadrantRay;
+			firstQuadrantRay.o = camera_pos;
+			float newX = x + sideStep;
+			float newY = y + sideStep;
+			vec2 screenCoord = vec2(newX / float(rendered_image.width), newY / float(rendered_image.height));
+			firstQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+			if (intersect(firstQuadrantRay)) {
+				firstQuadrant = Li(firstQuadrantRay).ToRGB();
+			}
+			else {
+				firstQuadrant = Lenvironment(firstQuadrantRay.d).ToRGB();
+			}
+		}
+
+		if (length(secondQp) > 0) {
+			secondQuadrant = secondQp;
+		}
+		else {
+			Ray secondQuadrantRay;
+			secondQuadrantRay.o = camera_pos;
+			float newX = x + sideStep;
+			float newY = y - sideStep;
+			vec2 screenCoord = vec2(newX / float(rendered_image.width), newY / float(rendered_image.height));
+			secondQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+			if (intersect(secondQuadrantRay)) {
+				secondQuadrant = Li(secondQuadrantRay).ToRGB();
+			}
+			else {
+				secondQuadrant = Lenvironment(secondQuadrantRay.d).ToRGB();
+			}
+		}
+
+		if (length(thirdQp) > 0) {
+			thirdQuadrant = thirdQp;
+		}
+		else {
+			Ray thirdQuadrantRay;
+			thirdQuadrantRay.o = camera_pos;
+			float newX = x - sideStep;
+			float newY = y - sideStep;
+			vec2 screenCoord = vec2(newX / float(rendered_image.width), newY / float(rendered_image.height));
+			thirdQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+			if (intersect(thirdQuadrantRay)) {
+				thirdQuadrant = Li(thirdQuadrantRay).ToRGB();
+			}
+			else {
+				thirdQuadrant = Lenvironment(thirdQuadrantRay.d).ToRGB();
+			}
+		}
+
+		if (length(fourthQp) > 0) {
+			fourthQuadrant = fourthQp;
+		}
+		else {
+			Ray fourthQuadrantRay;
+			fourthQuadrantRay.o = camera_pos;
+			float newX = x - sideStep;
+			float newY = y + sideStep;
+			vec2 screenCoord = vec2(newX / float(rendered_image.width), newY / float(rendered_image.height));
+			fourthQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+			if (intersect(fourthQuadrantRay)) {
+				fourthQuadrant = Li(fourthQuadrantRay).ToRGB();
+			}
+			else {
+				fourthQuadrant = Lenvironment(fourthQuadrantRay.d).ToRGB();
+			}
+		}
+
+
 
 		vec3 color = vec3(0.f);
-		//printf("%f \n", averageError(centerColor, firstQ));
-		if (averageError(centerColor, firstQ) < epsilon) {
-			color += (centerColor + firstQ) / 8.f;
+		if (averageError(centerColor, firstQuadrant) < epsilon) {
+			color += (centerColor + firstQuadrant) / 8.f;
 		} else {
-			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + 0.5f*sideStep, y + 0.5f*sideStep, X, Y, 0.5f*size,firstQ, vec3(0.f),centerColor, vec3(0.f));
+			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner,  x + 0.5f*sideStep, y + 0.5f*sideStep, X, Y, 0.5f*size,firstQuadrant, vec3(0.f),centerColor, vec3(0.f));
 		}
-		if (averageError(centerColor, secondQ) < epsilon) {
-			color += (centerColor + secondQ) / 8.f;
-		}
-		else {
-			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + 0.5f*sideStep, y - 0.5f*sideStep, X, Y, 0.5f*size, vec3(0.f), secondQ, vec3(0.f), centerColor);
-		}
-		if (averageError(centerColor, thirdQ) < epsilon) {
-			color += (centerColor + thirdQ) / 8.f;
+		if (averageError(centerColor, secondQuadrant) < epsilon) {
+			color += (centerColor + secondQuadrant) / 8.f;
 		}
 		else {
-			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - 0.5f*sideStep, y - 0.5f*sideStep, X, Y, 0.5f*size, centerColor, vec3(0.f), thirdQ, vec3(0.f));
+			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + 0.5f*sideStep, y - 0.5f*sideStep, X, Y, 0.5f*size, vec3(0.f), secondQuadrant, vec3(0.f), centerColor);
 		}
-		if (averageError(centerColor, fourthQ) < epsilon) {
-			color += (centerColor + fourthQ) / 8.f;
+		if (averageError(centerColor, thirdQuadrant) < epsilon) {
+			color += (centerColor + thirdQuadrant) / 8.f;
 		}
 		else {
-			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - 0.5f*sideStep, y + 0.5f*sideStep, X, Y, 0.5f*size, vec3(0.f), centerColor, vec3(0.f), fourthQ);
+			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner,  x - 0.5f*sideStep, y - 0.5f*sideStep, X, Y, 0.5f*size, centerColor, vec3(0.f), thirdQuadrant, vec3(0.f));
+		}
+		if (averageError(centerColor, fourthQuadrant) < epsilon) {
+			color += (centerColor + fourthQuadrant) / 8.f;
+		}
+		else {
+			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - 0.5f*sideStep, y + 0.5f*sideStep, X, Y, 0.5f*size, vec3(0.f), centerColor, vec3(0.f), fourthQuadrant);
 		}
 		
 		return color;// getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y);
@@ -340,6 +392,58 @@ namespace pathtracer
 
 		
 
+		//Update supersampling image for the corners of the main image's pixels
+		if (settings.supersampling_method != 0) {
+			// Stop here if we have as many samples as we want
+			if ((int(supersample_image.number_of_samples) > settings.max_paths_per_pixel) &&
+				(settings.max_paths_per_pixel != 0)) return;
+#pragma omp parallel for
+			for (int y = 0; y < supersample_image.height; y++) {
+				for (int x = 0; x < supersample_image.width; x++) {
+					vec3 color;
+					Ray primaryRay;
+
+					primaryRay.o = camera_pos;	
+					vec2 screenCoord = vec2(x / float(supersample_image.width), y / float(supersample_image.height));
+
+					//Task 1: introduce some randomness and jittering
+					screenCoord.x += (pathtracer::randf() - 0.5) / supersample_image.width;
+					screenCoord.y += (pathtracer::randf() - 0.5) / supersample_image.height;
+
+					primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+
+					//Add some DoF
+					if (depthOfField.lensRadius > 0) {
+						vec2 ret;
+						concentricSampleDisk(&ret.x, &ret.y);
+						vec2 lensPoint = depthOfField.lensRadius *  ret;
+						float t = focusDistance / (dot(primaryRay.d, camera_dir));
+						vec3 focusPoint = primaryRay.o + primaryRay.d * t;
+						primaryRay.o = primaryRay.o + camera_right * lensPoint.x + camera_up * lensPoint.y;
+						primaryRay.d = normalize(focusPoint - primaryRay.o);
+					} 
+
+					float n = float(supersample_image.number_of_samples);
+
+					if (x == supersample_image.width / 2 && y == supersample_image.height / 2)
+						supersample_image.data[y * supersample_image.width + x] =
+						supersample_image.data[y * supersample_image.width + x] * (n / (n + 1.0f)) +
+						(1.0f / (n + 1.0f)) * vec3(0.f, 0.f, 1.0f);
+					else
+
+						supersample_image.data[y * supersample_image.width + x] =
+						supersample_image.data[y * supersample_image.width + x] * (n / (n + 1.0f)) +
+						(1.0f / (n + 1.0f)) * color;
+				}
+			}
+			supersample_image.number_of_samples += 1;
+
+		}
+
+		
+
+
+
 
 		// Stop here if we have as many samples as we want
 		if ((int(rendered_image.number_of_samples) > settings.max_paths_per_pixel) &&
@@ -349,12 +453,50 @@ namespace pathtracer
 #pragma omp parallel for
 		for (int y = 0; y < rendered_image.height; y++) {
 			for (int x = 0; x < rendered_image.width; x++) {
+				//if (settings.supersampling_method == 0) {
 				vec3 color;
-				if(settings.supersampling_method == 0)
-					color = getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y);
+				Ray primaryRay;
+		
 
-				else
-					color = adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y);
+				primaryRay.o = camera_pos;
+				// Create a ray that starts in the camera position and points toward
+				// the current pixel on a virtual screen. 
+				vec2 screenCoord = vec2(x / float(rendered_image.width), y / float(rendered_image.height));
+
+				//Task 1: introduce some randomness and jittering
+				screenCoord.x += (pathtracer::randf() - 0.5) / rendered_image.width;
+				screenCoord.y += (pathtracer::randf() - 0.5) / rendered_image.height;
+
+				primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+
+				//Add some DoF
+				if (depthOfField.lensRadius > 0) {
+					vec2 ret;
+					concentricSampleDisk(&ret.x, &ret.y);
+					vec2 lensPoint = depthOfField.lensRadius *  ret;
+					float t = focusDistance / (dot(primaryRay.d, camera_dir));
+					vec3 focusPoint = primaryRay.o + primaryRay.d * t;
+					primaryRay.o = primaryRay.o + camera_right * lensPoint.x + camera_up * lensPoint.y;
+					primaryRay.d = normalize(focusPoint - primaryRay.o);
+				}
+				
+				if(settings.supersampling_method == 0){
+					if (intersect(primaryRay)) {
+						// If it hit something, evaluate the radiance from that point
+						color = Li(primaryRay).ToRGB();
+					}
+					else {
+						// Otherwise evaluate environment
+						color = Lenvironment(primaryRay.d).ToRGB();
+					}
+				}else {
+					vec3 firstQuadrant = supersample_image.data[y * supersample_image.width + x + 1];
+					vec3 secondQuadrant = supersample_image.data[(y - 1) * supersample_image.width + x + 1];
+					vec3 thirdQuadrant = supersample_image.data[(y - 1) * supersample_image.width + x];
+					vec3 fourthQuadrant = supersample_image.data[y * supersample_image.width + x];
+					color = adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y, 1.f, firstQuadrant, secondQuadrant, thirdQuadrant, fourthQuadrant);
+				}
+					
 				
 				// Accumulate the obtained radiance to the pixels color
 				float n = float(rendered_image.number_of_samples);
