@@ -50,7 +50,7 @@ namespace pathtracer
 		int width, height, number_of_samples = 0; 
 		std::vector<glm::vec3> data;
 		float * getPtr() { return &data[0].x; }
-	} rendered_image;
+	} rendered_image, corners_image;
 
 	///////////////////////////////////////////////////////////////////////////////
 	// The light source

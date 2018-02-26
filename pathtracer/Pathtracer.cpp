@@ -238,6 +238,24 @@ namespace pathtracer
 		vec2 screenCoord = vec2(x / float(rendered_image.width), y / float(rendered_image.height));
 
 		primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+
+		//Task 1: introduce some randomness and jittering
+		screenCoord.x += (pathtracer::randf() - 0.5)  / rendered_image.width;
+		screenCoord.y += (pathtracer::randf() - 0.5) / rendered_image.height;
+
+		primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+
+		//Add some DoF
+		if (depthOfField.lensRadius > 0) {
+			vec2 ret;
+			concentricSampleDisk(&ret.x, &ret.y);
+			vec2 lensPoint = depthOfField.lensRadius *  ret;
+			float t = focusDistance / (dot(primaryRay.d, camera_dir));
+			vec3 focusPoint = primaryRay.o + primaryRay.d * t;
+			primaryRay.o = primaryRay.o + camera_right * lensPoint.x + camera_up * lensPoint.y;
+			primaryRay.d = normalize(focusPoint - primaryRay.o);
+		}
+
 		if (intersect(primaryRay)) {
 			// If it hit something, evaluate the radiance from that point
 			centerColor = Li(primaryRay).ToRGB();
@@ -262,6 +280,16 @@ namespace pathtracer
 			float newY = y + sideStep;
 			vec2 screenCoord = vec2(newX / float(rendered_image.width), newY / float(rendered_image.height));
 			firstQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+			//Add some DoF
+			if (depthOfField.lensRadius > 0) {
+				vec2 ret;
+				concentricSampleDisk(&ret.x, &ret.y);
+				vec2 lensPoint = depthOfField.lensRadius *  ret;
+				float t = focusDistance / (dot(firstQuadrantRay.d, camera_dir));
+				vec3 focusPoint = firstQuadrantRay.o + firstQuadrantRay.d * t;
+				firstQuadrantRay.o = firstQuadrantRay.o + camera_right * lensPoint.x + camera_up * lensPoint.y;
+				firstQuadrantRay.d = normalize(focusPoint - firstQuadrantRay.o);
+			}
 			if (intersect(firstQuadrantRay)) {
 				firstQuadrant = Li(firstQuadrantRay).ToRGB();
 			}
@@ -280,6 +308,16 @@ namespace pathtracer
 			float newY = y - sideStep;
 			vec2 screenCoord = vec2(newX / float(rendered_image.width), newY / float(rendered_image.height));
 			secondQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+			//Add some DoF
+			if (depthOfField.lensRadius > 0) {
+				vec2 ret;
+				concentricSampleDisk(&ret.x, &ret.y);
+				vec2 lensPoint = depthOfField.lensRadius *  ret;
+				float t = focusDistance / (dot(secondQuadrantRay.d, camera_dir));
+				vec3 focusPoint = secondQuadrantRay.o + secondQuadrantRay.d * t;
+				secondQuadrantRay.o = secondQuadrantRay.o + camera_right * lensPoint.x + camera_up * lensPoint.y;
+				secondQuadrantRay.d = normalize(focusPoint - secondQuadrantRay.o);
+			}
 			if (intersect(secondQuadrantRay)) {
 				secondQuadrant = Li(secondQuadrantRay).ToRGB();
 			}
@@ -298,6 +336,16 @@ namespace pathtracer
 			float newY = y - sideStep;
 			vec2 screenCoord = vec2(newX / float(rendered_image.width), newY / float(rendered_image.height));
 			thirdQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+			//Add some DoF
+			if (depthOfField.lensRadius > 0) {
+				vec2 ret;
+				concentricSampleDisk(&ret.x, &ret.y);
+				vec2 lensPoint = depthOfField.lensRadius *  ret;
+				float t = focusDistance / (dot(thirdQuadrantRay.d, camera_dir));
+				vec3 focusPoint = thirdQuadrantRay.o + thirdQuadrantRay.d * t;
+				thirdQuadrantRay.o = thirdQuadrantRay.o + camera_right * lensPoint.x + camera_up * lensPoint.y;
+				thirdQuadrantRay.d = normalize(focusPoint - thirdQuadrantRay.o);
+			}
 			if (intersect(thirdQuadrantRay)) {
 				thirdQuadrant = Li(thirdQuadrantRay).ToRGB();
 			}
@@ -316,6 +364,16 @@ namespace pathtracer
 			float newY = y + sideStep;
 			vec2 screenCoord = vec2(newX / float(rendered_image.width), newY / float(rendered_image.height));
 			fourthQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+			//Add some DoF
+			if (depthOfField.lensRadius > 0) {
+				vec2 ret;
+				concentricSampleDisk(&ret.x, &ret.y);
+				vec2 lensPoint = depthOfField.lensRadius *  ret;
+				float t = focusDistance / (dot(fourthQuadrantRay.d, camera_dir));
+				vec3 focusPoint = fourthQuadrantRay.o + fourthQuadrantRay.d * t;
+				fourthQuadrantRay.o = fourthQuadrantRay.o + camera_right * lensPoint.x + camera_up * lensPoint.y;
+				fourthQuadrantRay.d = normalize(focusPoint - fourthQuadrantRay.o);
+			}
 			if (intersect(fourthQuadrantRay)) {
 				fourthQuadrant = Li(fourthQuadrantRay).ToRGB();
 			}
@@ -424,6 +482,13 @@ namespace pathtracer
 						primaryRay.d = normalize(focusPoint - primaryRay.o);
 					}
 
+					if (intersect(primaryRay)) {
+						color = Li(primaryRay).ToRGB();
+					}
+					else {
+						color = Lenvironment(primaryRay.d).ToRGB();
+					}
+
 					float n = float(corners_image.number_of_samples);
 					corners_image.data[y * corners_image.width + x] =
 					corners_image.data[y * corners_image.width + x] * (n / (n + 1.0f)) +
@@ -486,65 +551,7 @@ namespace pathtracer
 					vec3 secondQuadrant = corners_image.data[(y) * corners_image.width + (x + 1)];
 					vec3 thirdQuadrant = corners_image.data[(y) * corners_image.width + (x)];
 					vec3 fourthQuadrant = corners_image.data[(y + 1) * corners_image.width + (x)];
-
-					//Shoot new rays, if necessary, and store them in the corners 
-
-					if (length(firstQuadrant) == 0) {
-						Ray firstQuadrantRay;
-						firstQuadrantRay.o = camera_pos;
-						vec2 screenCoord = vec2((x+0.5f) / float(rendered_image.width), (y+0.5f) / float(rendered_image.height));
-						firstQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
-						if (intersect(firstQuadrantRay)) {
-							firstQuadrant = Li(firstQuadrantRay).ToRGB();
-						}
-						else {
-							firstQuadrant = Lenvironment(firstQuadrantRay.d).ToRGB();
-						}
-						corners_image.data[(y + 1) * corners_image.width + (x + 1)] = firstQuadrant;
-					}
-
-					if (length(secondQuadrant) == 0) {
-						Ray secondQuadrantRay;
-						secondQuadrantRay.o = camera_pos;
-						vec2 screenCoord = vec2((x + 0.5f) / float(rendered_image.width), (y-0.5f) / float(rendered_image.height));
-						secondQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
-						if (intersect(secondQuadrantRay)) {
-							secondQuadrant = Li(secondQuadrantRay).ToRGB();
-						}
-						else {
-							secondQuadrant = Lenvironment(secondQuadrantRay.d).ToRGB();
-						}
-						corners_image.data[(y) * corners_image.width + (x + 1)] = secondQuadrant;
-					}
-
-					if (length(thirdQuadrant) == 0) {
-						Ray thirdQuadrantRay;
-						thirdQuadrantRay.o = camera_pos;
-						vec2 screenCoord = vec2((x - 0.5f) / float(rendered_image.width), (y - 0.5f) / float(rendered_image.height));
-						thirdQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
-						if (intersect(thirdQuadrantRay)) {
-							thirdQuadrant = Li(thirdQuadrantRay).ToRGB();
-						}
-						else {
-							thirdQuadrant = Lenvironment(thirdQuadrantRay.d).ToRGB();
-						}
-						corners_image.data[(y) * corners_image.width + (x)] = thirdQuadrant;
-					}
-
-					if (length(fourthQuadrant) == 0) {
-						Ray fourthQuadrantRay;
-						fourthQuadrantRay.o = camera_pos;
-						vec2 screenCoord = vec2((x - 0.5f) / float(rendered_image.width), (y + 0.5f) / float(rendered_image.height));
-						fourthQuadrantRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
-						if (intersect(fourthQuadrantRay)) {
-							fourthQuadrant = Li(fourthQuadrantRay).ToRGB();
-						}
-						else {
-							fourthQuadrant = Lenvironment(fourthQuadrantRay.d).ToRGB();
-						}
-						corners_image.data[(y + 1) * corners_image.width + (x)] = fourthQuadrant;
-					}
-
+										
 					color = adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y, 1, firstQuadrant, secondQuadrant, thirdQuadrant, fourthQuadrant);
 				}
 					
