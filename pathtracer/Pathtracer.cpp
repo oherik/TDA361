@@ -238,10 +238,11 @@ namespace pathtracer
 		vec2 screenCoord = vec2(x / float(rendered_image.width), y / float(rendered_image.height));
 
 		primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
+		float sideStep = 0.5f / level;
 
 		//Task 1: introduce some randomness and jittering
-		screenCoord.x += (pathtracer::randf() - 0.5)  / rendered_image.width;
-		screenCoord.y += (pathtracer::randf() - 0.5) / rendered_image.height;
+		screenCoord.x += ((pathtracer::randf() - 0.5)*sideStep) / rendered_image.width;
+		screenCoord.y += ((pathtracer::randf() - 0.5)*sideStep) / rendered_image.height;
 
 		primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
 
@@ -269,7 +270,6 @@ namespace pathtracer
 		}
 			
 		//	Shoot new rays if necessary
-		float sideStep = 0.5f / level;
 		if (length(firstQp) > EPSILON) {
 			firstQuadrant = firstQp;
 		}
