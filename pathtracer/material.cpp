@@ -34,6 +34,7 @@ namespace pathtracer
     //Beckmann
     //m = sqrt(2/(shininess+2))
     float beckDiff(float ndotwh, float m){
+        printf("Beck yo\n");
         float ndotwh2 = ndotwh * ndotwh;
         float m2 = m * m;
         return exp((ndotwh2 - 1)/(m2 * ndotwh2))/(M_PI * m2 * ndotwh2 * ndotwh2);
@@ -75,16 +76,23 @@ namespace pathtracer
     //Smith-Schlick
     //k = roughness * sqrt(2/M_PI)
     float smithSchlickGeom(float ndotwo, float ndotwi, float k){
+        printf("smithSchlick yo\n");
         return ((ndotwi) / (ndotwi * (1-k) + k)) * ((ndotwo) / (ndotwo * (1-k) + k));
     }
 
     //Smith-Walter
     float smithWalterGeom(float ndotwo, float ndotwi, float m, vec3 wo, vec3 wi, vec3 wh, vec3 n){
+        printf("smithWalter yo\n");
         if (dot(wo,wh)/dot(wo,n) <= 0 || dot(wi,wh)/dot(wi,n) <= 0){
             return 0;
         }
 
-        float awo = 1 / (m * tan(acos(ndotwo)));
+        float den = (m * tan(acos(ndotwo)));
+        if(den < EPSILON){
+            return 0;
+        }
+
+        float awo = 1.0f / den;
         float first, second;
         if(awo < 1.6){
             float awo2 = awo * awo;
@@ -219,8 +227,13 @@ namespace pathtracer
 		float ndotwo = max(0.0f, dot(n, wo));
 
         float F_wi = fresnel(R0, whdotwi);
+        //dynamic
         float D_wh = diffuse(shininess, ndotwh);
         float G_wiwo = geometric(ndotwh, ndotwo, wodotwh, ndotwi, shininess, wo, wi, wh, n);
+
+        //rigid
+		//float D_wh = (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
+		//float G_wiwo = min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
 
 		float den = (4.0f * ndotwo*ndotwi);
 
@@ -336,15 +349,18 @@ namespace pathtracer
 
 		float cost = dot(n_normalized, wi_normalized);
 
-		float F_wi_1 = exactReflection(m_n[0], m_k[0], cost);
-		float F_wi_2 = exactReflection(m_n[1], m_k[1], cost);
-		float F_wi_3 = exactReflection(m_n[2], m_k[2], cost);
 
+        //dynamic
         float F_wi = fresnel(R0, whdotwi);
         float D_wh = diffuse(shininess, ndotwh);
         float G_wiwo = geometric(ndotwh, ndotwo, wodotwh, ndotwi, shininess, wo, wi, wh, n);
 
-        //Old below 
+
+
+        //rigid
+		float F_wi_1 = exactReflection(m_n[0], m_k[0], cost);
+		float F_wi_2 = exactReflection(m_n[1], m_k[1], cost);
+		float F_wi_3 = exactReflection(m_n[2], m_k[2], cost);
 		//float D_wh = (shininess + 2.0f) / (2.0f * M_PI) * pow(ndotwh, shininess);
 		//float G_wiwo = min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
 
