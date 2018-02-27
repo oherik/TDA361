@@ -447,15 +447,12 @@ namespace pathtracer
 			focusDistance = 1000;
 		}
 
+		// Stop here if we have as many samples as we want
+		if ((int(rendered_image.number_of_samples) > settings.max_paths_per_pixel) &&
+			(settings.max_paths_per_pixel != 0)) return;
 
-
-
-		//Sample the corners like all the time.
-		//Update supersampling image for the corners of the main image's pixels
-		if (settings.supersampling_method != 0) {
-			// Stop here if we have as many samples as we want
-			if ((int(corners_image.number_of_samples) > settings.max_paths_per_pixel) &&
-				(settings.max_paths_per_pixel != 0)) return;
+		// Stop here if we have as many samples as we want
+		if (settings.supersampling_method != 0) {	
 #pragma omp parallel for
 			for (int y = 0; y < corners_image.height; y++) {
 				for (int x = 0; x < corners_image.width; x++) {
@@ -498,12 +495,6 @@ namespace pathtracer
 			corners_image.number_of_samples += 1;
 
 		}
-
-
-
-		// Stop here if we have as many samples as we want
-		if ((int(rendered_image.number_of_samples) > settings.max_paths_per_pixel) &&
-			(settings.max_paths_per_pixel != 0)) return;
 
 		// Trace one path per pixel (the omp parallel stuf magically distributes the 
 		// pathtracing on all cores of your CPU).
