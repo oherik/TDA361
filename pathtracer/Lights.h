@@ -3,6 +3,7 @@
 #include "Pathtracer.h"
 #include "sampling.h"
 #include "spectrum.h"
+#include "embree.h"
 
 using namespace glm; 
 
@@ -35,5 +36,8 @@ namespace pathtracer
 
     class DiffuseAreaLight : public AreaLight {
         public:
+            const Spectrum Lemit;
+            const Float area;
         protected:
     };
+}

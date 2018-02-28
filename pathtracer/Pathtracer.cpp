@@ -482,8 +482,8 @@ namespace pathtracer
 					vec2 screenCoord = vec2(x / float(corners_image.width), y / float(corners_image.height));
 
 					//Task 1: introduce some randomness and jittering
-					screenCoord.x += (randf() - 0.5) / supersample_image.width;
-					screenCoord.y += (randf() - 0.5) / supersample_image.height;
+					screenCoord.x += (randf() - 0.5) / corners_image.width;
+					screenCoord.y += (randf() - 0.5) / corners_image.height;
 
 					primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
 
