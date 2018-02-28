@@ -49,6 +49,13 @@ namespace labhelper
 		return sqrt(1.0f / (1.0f - r_fix) * r_fix * (pow((rgToN(r_fix, g_val) + 1.0f), 2.0f) - pow(rgToN(r_fix, g_val) - 1.0f, 2.0f)));
 	}
 
+	float nkToR(float n, float k) {
+		return (pow(n - 1.0f, 2.0f) + pow(k, 2.0f)) / (pow(n + 1.0, 2.0f) + pow(k, 2.0f));
+	}
+	float nkToG(float n, float k) {
+		return   ((1.0f + sqrt(nkToR(n, k))) / (1.0f - sqrt(nkToR(n, k))) - n) / ((1.0f + sqrt(nkToR(n, k))) / (1.0f - sqrt(nkToR(n, k))) - (1.0f - nkToR(n, k)) / (1.0f + nkToR(n, k)));
+	}
+
 	///////////////////////////////////////////////////////////////////////////
 	// Destructor
 	///////////////////////////////////////////////////////////////////////////
@@ -61,6 +68,7 @@ namespace labhelper
 			if (material.m_metalness_texture.valid) glDeleteTextures(1, &material.m_metalness_texture.gl_id);
 			if (material.m_fresnel_texture.valid) glDeleteTextures(1, &material.m_fresnel_texture.gl_id);
 			if (material.m_emission_texture.valid) glDeleteTextures(1, &material.m_emission_texture.gl_id);
+			if (material.m_bumpmap_texture.valid) glDeleteTextures(1, &material.m_bumpmap_texture.gl_id);
 		}
 		glDeleteBuffers(1, &m_positions_bo);
 		glDeleteBuffers(1, &m_normals_bo);
@@ -118,11 +126,13 @@ namespace labhelper
 		for (const auto & m : materials) {
 			Material material; 
 			material.m_name = m.name;
+			material.m_n = glm::vec3(m.n[0], m.n[1], m.n[2]);
+			material.m_k = glm::vec3(m.k[0], m.k[1], m.k[2]);
+			material.m_r = glm::vec3(nkToR(material.m_n[0], material.m_k[0]), nkToR(material.m_n[1], material.m_k[1]), nkToR(material.m_n[2], material.m_k[2]));
+			material.m_g = glm::vec3(nkToG(material.m_n[0], material.m_k[0]), nkToG(material.m_n[1], material.m_k[1]), nkToG(material.m_n[2], material.m_k[2]));
+
 			material.m_color = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
-			material.m_r = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
-			material.m_g = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
-			material.m_n = glm::vec3(rgToN(material.m_r[0], material.m_g[0]), rgToN(material.m_r[1], material.m_g[1]), rgToN(material.m_r[2], material.m_g[2]));
-			material.m_k = glm::vec3(rgToK(material.m_r[0], material.m_g[0]), rgToK(material.m_r[1], material.m_g[1]), rgToK(material.m_r[2], material.m_g[2]));
+	
 			
 			if (m.diffuse_texname != "") { 
 				material.m_color_texture.load(directory + m.diffuse_texname, 4);
@@ -146,6 +156,9 @@ namespace labhelper
 			material.m_emission = m.emission[0];
 			if (m.emissive_texname != "") {
 				material.m_emission_texture.load(directory + m.emissive_texname, 4);
+			}
+			if (m.bump_texname != "") {
+				material.m_bumpmap_texture.load(directory + m.bump_texname, 4);
 			}
 			material.m_transparency = m.transmittance[0]; 
 			model->m_materials.push_back(material);
@@ -353,6 +366,8 @@ namespace labhelper
 			mat_file << "Kd " << mat.m_color.x << " " << mat.m_color.y << " " << mat.m_color.z << "\n";
 			mat_file << "Ks " << mat.m_reflectivity << " " << mat.m_reflectivity << " " << mat.m_reflectivity << "\n";
 			mat_file << "Pm " << mat.m_metalness << "\n";
+			mat_file << "Pn " << mat.m_n.x << " " << mat.m_n.y << " " << mat.m_n.z << "\n";
+			mat_file << "Po " << mat.m_k.x << " " << mat.m_k.y << " " << mat.m_k.z << "\n";
 			mat_file << "Ps " << mat.m_fresnel << "\n";
 			mat_file << "Pr " << mat.m_shininess << "\n";
 			mat_file << "Ke " << mat.m_emission << " " << mat.m_emission << " " << mat.m_emission << "\n";
@@ -369,6 +384,8 @@ namespace labhelper
 				mat_file << "map_Pr " << directory + mat.m_shininess_texture.filename << "\n";
 			if (mat.m_emission_texture.valid)
 				mat_file << "map_Ke " << directory + mat.m_emission_texture.filename << "\n";
+			if (mat.m_bumpmap_texture.valid)
+				mat_file << "map_Bump " << directory + mat.m_bumpmap_texture.filename << "\n";
 		}
 		mat_file.close(); 
 
@@ -441,12 +458,14 @@ namespace labhelper
 				bool has_fresnel_texture = material.m_fresnel_texture.valid;
 				bool has_shininess_texture = material.m_shininess_texture.valid;
 				bool has_emission_texture = material.m_emission_texture.valid;
+				bool has_bumpmap_texture = material.m_bumpmap_texture.valid;
 				if (has_color_texture) glBindTextures(0, 1, &material.m_color_texture.gl_id);
 				if (has_reflectivity_texture) glBindTextures(1, 1, &material.m_reflectivity_texture.gl_id);
 				if (has_metalness_texture) glBindTextures(2, 1, &material.m_metalness_texture.gl_id);
 				if (has_fresnel_texture) glBindTextures(3, 1, &material.m_fresnel_texture.gl_id);
 				if (has_shininess_texture) glBindTextures(4, 1, &material.m_shininess_texture.gl_id);
 				if (has_emission_texture) glBindTextures(5, 1, &material.m_emission_texture.gl_id);
+				if (has_bumpmap_texture) glBindTextures(6, 1, &material.m_bumpmap_texture.gl_id);
 				GLint current_program = 0;
 				glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
 				glUniform1i(glGetUniformLocation(current_program, "has_color_texture"), has_color_texture);
@@ -456,6 +475,7 @@ namespace labhelper
 				glUniform1i(glGetUniformLocation(current_program, "has_fresnel_texture"), has_fresnel_texture);
 				glUniform1i(glGetUniformLocation(current_program, "has_shininess_texture"), has_shininess_texture);
 				glUniform1i(glGetUniformLocation(current_program, "has_emission_texture"), has_emission_texture);
+				glUniform1i(glGetUniformLocation(current_program, "has_bumpmap_texture"), has_bumpmap_texture);
 				glUniform3fv(glGetUniformLocation(current_program, "material_color"), 1, &material.m_color.x);
 				glUniform3fv(glGetUniformLocation(current_program, "material_diffuse_color"), 1, &material.m_color.x); //FIXME: Compatibility with old shading model of lab3.
 				glUniform3fv(glGetUniformLocation(current_program, "material_emissive_color"), 1, &material.m_color.x); //FIXME: Compatibility with old shading model of lab3.

@@ -75,7 +75,7 @@ void initialize()
 	#else
 	pathtracer::settings.subsampling = 4;
 	#endif
-	pathtracer::settings.supersampling_method = 1;
+	pathtracer::settings.supersampling_method = 0;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Set up light

@@ -41,6 +41,7 @@ namespace labhelper
 		Texture	m_metalness_texture;
 		Texture	m_fresnel_texture;
 		Texture	m_emission_texture;
+		Texture	m_bumpmap_texture;
 	};
 
 	struct Mesh

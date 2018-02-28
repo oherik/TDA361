@@ -3,7 +3,10 @@ newmtl wire_028028177
 Kd 0.79902 0.564014 0.329008
 Ks 1 1 1
 Pm 1
+Pn 2.40525 2.21426 2.65636
+Po 6.37998 3.83256 3.23113
 Ps 1
 Pr 25000
 Ke 0 0 0
 Tf 0 0 0
+map_Bump ../scenes/../scenes/bump_normal.png
