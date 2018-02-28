@@ -26,6 +26,10 @@ add_executable ( pathtracer
     material.cpp
     spectrum.h
     spectrum.cpp
+    sampling.h
+    sampling.cpp
+    Lights.h
+    Lights.cpp
     ${SHADERS}
     )
 

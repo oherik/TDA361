@@ -7,6 +7,7 @@
 #include "embree.h"
 #include "sampling.h"
 #include "spectrum.h"
+#include "Lights.h"
 
 using namespace std; 
 using namespace glm; 
@@ -62,6 +63,24 @@ namespace pathtracer
 		vec2 lookup = vec2(phi / (2.0 * M_PI), theta / M_PI);
 		return environment.multiplier * Spectrum::FromRGB(environment.map.sample(lookup.x, lookup.y), SpectrumType::Illuminant);
 	}
+
+
+    //sampleLi for pointlight
+    Spectrum sampleLi(Ray lightRay, Intersection hit, vec3 *wi, float *pdf){
+
+        if (!occluded(lightRay)) {
+            vec3 lightVec = point_light.position - hit.position;
+            *wi = normalize(lightVec);
+            *pdf = 1.0f;
+
+            Spectrum lightSpectrum = Spectrum::FromRGB(point_light.color, SpectrumType::Illuminant);
+            float lengthSquared = lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z;
+
+            return lightSpectrum / lengthSquared;
+        }else{
+            return Spectrum();
+        }
+    }
 
 	///////////////////////////////////////////////////////////////////////////
 	// Calculate the radiance going from one point (r.hitPosition()) in one 
@@ -135,14 +154,14 @@ namespace pathtracer
 
 			// Emitted radiance from intersection
 			spectrumSample = spectrumSample + throughput * hit.material->m_emission;
-			
-			// Sample incoming direction
-			vec3 wi;
-			float pdf = 0.0f;
-			Spectrum brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
+        
+        // Sample incoming direction
+        vec3 wi;
+        float pdf = 0.0f;
+        Spectrum brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
 
-			if (pdf < EPSILON) {
-				return spectrumSample;
+        if (pdf < EPSILON) {
+            return spectrumSample;
 			}
 			
 			float cosineTerm = abs(dot(wi, hit.shading_normal));
@@ -407,8 +426,8 @@ namespace pathtracer
 					vec2 screenCoord = vec2(x / float(supersample_image.width), y / float(supersample_image.height));
 
 					//Task 1: introduce some randomness and jittering
-					screenCoord.x += (pathtracer::randf() - 0.5) / supersample_image.width;
-					screenCoord.y += (pathtracer::randf() - 0.5) / supersample_image.height;
+					screenCoord.x += (randf() - 0.5) / supersample_image.width;
+					screenCoord.y += (randf() - 0.5) / supersample_image.height;
 
 					primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
 
@@ -464,8 +483,8 @@ namespace pathtracer
 				vec2 screenCoord = vec2(x / float(rendered_image.width), y / float(rendered_image.height));
 
 				//Task 1: introduce some randomness and jittering
-				screenCoord.x += (pathtracer::randf() - 0.5) / rendered_image.width;
-				screenCoord.y += (pathtracer::randf() - 0.5) / rendered_image.height;
+				screenCoord.x += (randf() - 0.5) / rendered_image.width;
+				screenCoord.y += (randf() - 0.5) / rendered_image.height;
 
 				primaryRay.d = normalize(lower_right_corner + screenCoord.x * X + screenCoord.y * Y);
 
@@ -516,3 +535,4 @@ namespace pathtracer
 	}
 
 };
+

@@ -34,7 +34,6 @@ namespace pathtracer
     //Beckmann
     //m = sqrt(2/(shininess+2))
     float beckDiff(float ndotwh, float m){
-        printf("Beck yo\n");
         float ndotwh2 = ndotwh * ndotwh;
         float m2 = m * m;
         return exp((ndotwh2 - 1)/(m2 * ndotwh2))/(M_PI * m2 * ndotwh2 * ndotwh2);
@@ -76,13 +75,11 @@ namespace pathtracer
     //Smith-Schlick
     //k = roughness * sqrt(2/M_PI)
     float smithSchlickGeom(float ndotwo, float ndotwi, float k){
-        printf("smithSchlick yo\n");
         return ((ndotwi) / (ndotwi * (1-k) + k)) * ((ndotwo) / (ndotwo * (1-k) + k));
     }
 
     //Smith-Walter
     float smithWalterGeom(float ndotwo, float ndotwi, float m, vec3 wo, vec3 wi, vec3 wh, vec3 n){
-        printf("smithWalter yo\n");
         if (dot(wo,wh)/dot(wo,n) <= 0 || dot(wi,wh)/dot(wi,n) <= 0){
             return 0;
         }
