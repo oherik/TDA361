@@ -9,4 +9,4 @@ Ps 1
 Pr 25000
 Ke 0 0 0
 Tf 0 0 0
-map_Bump ../scenes/../scenes/bump_normal.png
+map_bump ../scenes/bump_normal.png

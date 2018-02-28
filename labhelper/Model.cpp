@@ -158,7 +158,7 @@ namespace labhelper
 				material.m_emission_texture.load(directory + m.emissive_texname, 4);
 			}
 			if (m.bump_texname != "") {
-				material.m_bumpmap_texture.load(directory + m.bump_texname, 4);
+				material.m_bumpmap_texture.load(m.bump_texname, 4);
 			}
 			material.m_transparency = m.transmittance[0]; 
 			model->m_materials.push_back(material);
@@ -385,7 +385,7 @@ namespace labhelper
 			if (mat.m_emission_texture.valid)
 				mat_file << "map_Ke " << directory + mat.m_emission_texture.filename << "\n";
 			if (mat.m_bumpmap_texture.valid)
-				mat_file << "map_Bump " << directory + mat.m_bumpmap_texture.filename << "\n";
+				mat_file << "map_bump " << mat.m_bumpmap_texture.filename << "\n";
 		}
 		mat_file.close(); 
 
