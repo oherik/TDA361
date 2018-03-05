@@ -867,8 +867,8 @@ static void InitMaterial(material_t *material) {
     material->specular[i] = 0.f;
     material->transmittance[i] = 0.f;
     material->emission[i] = 0.f;
-	material->n[i] = 0.f;
-	material->k[i] = 0.f;
+	material->n[i] = 1.f;
+	material->k[i] = 1.f;
   }
   material->illum = 0;
   material->dissolve = 1.f;

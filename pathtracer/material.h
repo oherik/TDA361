@@ -81,7 +81,9 @@ namespace pathtracer
 	{
 	public: 
 		vec3 m_n, m_k, color;
-		CustomDefinedMetal(vec3 color, vec3 m_n, vec3 m_k, float _shininess, float _R0) : color(color), m_n(m_n), m_k(m_k), CustomDefined(_shininess, _R0) {}
+		const float *lambda; //The wavelengths associated with the n and k values
+		const int spectrumSamples;
+		CustomDefinedMetal(vec3 color, vec3 m_n, vec3 m_k, float *lambda, int spectrumSamples, float _shininess, float _R0) : color(color), m_n(m_n), m_k(m_k), lambda(lambda), spectrumSamples(spectrumSamples), CustomDefined(_shininess, _R0) {}
 		virtual Spectrum refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 		virtual Spectrum reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 	};
