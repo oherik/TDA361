@@ -28,10 +28,8 @@ SampledSpectrum SampledSpectrum::rgbIllum2SpectBlue;
 //	Check if the samples are sorted by wavelength
 ///////////////////////////////////////////////////////////////////////////////
 bool SpectrumSamplesSorted(const Float *lambda, const Float *v, int n) {
-	for (int i = 0; i < n - 1; ++i) {
-		if (lambda[i] > lambda[i + 1]) {
-			return false;
-		}
+	for (int i = 1; i < n; ++i) {
+		if (lambda[i] < lambda[i - 1]) return false;
 	}
 	return true;
 }
