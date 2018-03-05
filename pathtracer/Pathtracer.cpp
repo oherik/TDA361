@@ -26,8 +26,6 @@ namespace pathtracer
 	DepthOfField depthOfField;
 	static float epsilon = 0.02f; // for AASS
 	static int maxLevel = 2; //for AASS, should be >=1
-	float lambda[3] = { 620, 540, 450 }; // For the standard n and k values implemented
-	int spectrumSamples = 3; // The number of n and k samples
 
 	///////////////////////////////////////////////////////////////////////////
 	// Restart rendering of image
@@ -126,9 +124,10 @@ namespace pathtracer
 				}
 			}
 
+			float wavelengths[3] = { hit.material->m_RGB_wavelengths.x, hit.material->m_RGB_wavelengths.y, hit.material->m_RGB_wavelengths.z };
 			TransparencyBlend transparency_blend(a, &transparent, hit.material->m_color);
 			CustomDefined dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
-			CustomDefinedMetal metal(hit.material->m_color, hit.material->m_n, hit.material->m_k, &lambda[0], spectrumSamples, hit.material->m_shininess,
+			CustomDefinedMetal metal(hit.material->m_color, hit.material->m_n, hit.material->m_k, &wavelengths[0], hit.material->m_shininess,
 				hit.material->m_fresnel);
 			LinearBlend metal_blend(hit.material->m_metalness, &metal, &dielectric);
 			LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);

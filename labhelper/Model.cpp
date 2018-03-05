@@ -128,6 +128,7 @@ namespace labhelper
 			material.m_name = m.name;
 			material.m_n = glm::vec3(m.n[0], m.n[1], m.n[2]);
 			material.m_k = glm::vec3(m.k[0], m.k[1], m.k[2]);
+			material.m_RGB_wavelengths = glm::vec3(m.RGB_wavelengths[0], m.RGB_wavelengths[1], m.RGB_wavelengths[2]);
 			material.m_r = glm::vec3(nkToR(material.m_n[0], material.m_k[0]), nkToR(material.m_n[1], material.m_k[1]), nkToR(material.m_n[2], material.m_k[2]));
 			material.m_g = glm::vec3(nkToG(material.m_n[0], material.m_k[0]), nkToG(material.m_n[1], material.m_k[1]), nkToG(material.m_n[2], material.m_k[2]));
 
@@ -368,6 +369,7 @@ namespace labhelper
 			mat_file << "Pm " << mat.m_metalness << "\n";
 			mat_file << "Pn " << mat.m_n.x << " " << mat.m_n.y << " " << mat.m_n.z << "\n";
 			mat_file << "Po " << mat.m_k.x << " " << mat.m_k.y << " " << mat.m_k.z << "\n";
+			mat_file << "Pp " << mat.m_RGB_wavelengths.x << " " << mat.m_RGB_wavelengths.y << " " << mat.m_RGB_wavelengths.z << "\n";
 			mat_file << "Ps " << mat.m_fresnel << "\n";
 			mat_file << "Pr " << mat.m_shininess << "\n";
 			mat_file << "Ke " << mat.m_emission << " " << mat.m_emission << " " << mat.m_emission << "\n";

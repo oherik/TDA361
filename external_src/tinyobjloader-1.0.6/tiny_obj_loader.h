@@ -142,6 +142,7 @@ typedef struct {
   real_t emission[3];
   real_t n[3];
   real_t k[3];
+  real_t RGB_wavelengths[3];
   real_t shininess;
   real_t ior;       // index of refraction
   real_t dissolve;  // 1 == opaque; 0 == fully transparent
@@ -870,6 +871,9 @@ static void InitMaterial(material_t *material) {
 	material->n[i] = 1.f;
 	material->k[i] = 1.f;
   }
+  material->RGB_wavelengths[0] = 620.f; // R
+  material->RGB_wavelengths[1] = 540.f;	// G
+  material->RGB_wavelengths[2] = 450.f;	// B
   material->illum = 0;
   material->dissolve = 1.f;
   material->shininess = 1.f;
@@ -1332,6 +1336,17 @@ void LoadMtl(std::map<std::string, int> *material_map,
 		material.k[0] = r;
 		material.k[1] = g;
 		material.k[2] = b;
+		continue;
+	}
+
+	// PBR: RGB wavelengths
+	if (token[0] == 'P' && token[1] == 'p' && IS_SPACE(token[2])) {
+		token += 2;
+		real_t r, g, b;
+		parseReal3(&r, &g, &b, &token);
+		material.RGB_wavelengths[0] = r;
+		material.RGB_wavelengths[1] = g;
+		material.RGB_wavelengths[2] = b;
 		continue;
 	}
 
