@@ -9,6 +9,7 @@
 #include "spectrum.h"
 #include "Lights.h"
 #include <math.h>  
+#include <glm/gtx/rotate_vector.hpp>
 
 using namespace std; 
 using namespace glm; 
@@ -104,15 +105,39 @@ namespace pathtracer
 			// Get the intersection information from the ray
 			Intersection hit = getIntersection(current_ray);
 
+			//Bump it a bit
+			labhelper::Texture bumpmap = hit.material->m_bumpmap_texture;
+			float u = hit.texture_coordinates.x;
+			float v = hit.texture_coordinates.y;
+			if (bumpmap.valid && pathtracer::customSettings.bumpmap) {
+				int i = round(u * (float)bumpmap.width);
+				int j = round(v * (float)bumpmap.height);
+				unsigned bytePerPixel = 3;
+				unsigned char* pixelOffset = bumpmap.data + (i + bumpmap.height * j) * bytePerPixel;
+				float r = (float)pixelOffset[0] / 255.f;
+				float g = (float)pixelOffset[1] / 255.f;
+				float b = (float)pixelOffset[2] / 255.f;
+				vec3 offset = 2.f*vec3(r, g, b)-vec3(1.f);
+
+				vec3 originalNormal = vec3(0.f, 0.f, 1.f);
+				vec3 rotAxis = cross(originalNormal, hit.geometry_normal);
+				float rotationAngle = acos(dot(originalNormal, hit.geometry_normal));
+				vec3 newOffset = glm::rotate(offset, rotationAngle, rotAxis);
+
+				//hit.geometry_normal = normalize(glm::rotate(offset, rotationAngle, cross(originalNormal, hit.geometry_normal)));
+				//hit.shading_normal= normalize(glm::rotate(offset, rotationAngle, cross(originalNormal, hit.shading_normal)));
+				//return Spectrum::FromRGB(vec3(r, g, b), SpectrumType::Illuminant);
+
+			}
+
+
+
 			// Create a material tree
 
 			//Use color map if available
 			labhelper::Texture color_texture = hit.material->m_color_texture;
 			vec3 diffuseColor;
 			if (color_texture.valid && pathtracer::customSettings.diffusemap) {
-				float u = hit.texture_coordinates.x;
-				float v = hit.texture_coordinates.y;
-
 				int i = round(u * (float)color_texture.width);
 				int j = round(v * (float)color_texture.height);
 				unsigned bytePerPixel = 4;
@@ -126,16 +151,12 @@ namespace pathtracer
 				diffuseColor = hit.material->m_color;
 			}
 			Diffuse diffuse(diffuseColor);
-			
-
-
-
-
-
-
+		
+			/*
 			Transparent transparent(hit.material->m_transparency, hit.material->m_color);
 
 			//Calculate opacity
+			
 			float dist = (length(hit.position - last_position));
 			float a_c = -log(hit.material->m_transparency);
 			float exp = -a_c*dist;
@@ -153,18 +174,18 @@ namespace pathtracer
 				}
 			}
 
-			float wavelengths[3] = { hit.material->m_RGB_wavelengths.x, hit.material->m_RGB_wavelengths.y, hit.material->m_RGB_wavelengths.z };
+			
 			TransparencyBlend transparency_blend(a, &transparent, hit.material->m_color);
-			
-			
+			*/
+
+
+
+			float wavelengths[3] = { hit.material->m_RGB_wavelengths.x, hit.material->m_RGB_wavelengths.y, hit.material->m_RGB_wavelengths.z };
 			
 			labhelper::Texture texture = hit.material->m_color_texture;// m_bumpmap_texture;
 
 
 
-			float u = hit.texture_coordinates.x;
-			float v = hit.texture_coordinates.y;
-			
 			int _i = round(u * (float)texture.width);
 			int _j = round(v * (float)texture.height);
 
@@ -194,7 +215,7 @@ namespace pathtracer
 			LinearBlend metal_blend(hit.material->m_metalness, &metal, &dielectric);
 			LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);
 
-			LinearBlend transparency_blend_final(hit.material->m_transparency, &transparency_blend, &reflectivity_blend);
+			//LinearBlend transparency_blend_final(hit.material->m_transparency, &transparency_blend, &reflectivity_blend);
 			
 			
 			BRDF & mat = reflectivity_blend;

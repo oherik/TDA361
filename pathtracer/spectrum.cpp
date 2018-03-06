@@ -144,6 +144,11 @@ SampledSpectrum::SampledSpectrum(const RGBSpectrum &r, SpectrumType t) {
 }
 
 
+RGBSpectrum RGBSpectrum::FromRGB(glm::vec3 rgb, SpectrumType type) {
+	const Float rgbArray[3] = { rgb.x, rgb.y, rgb.z };
+	return RGBSpectrum::FromRGB(rgbArray, type);
+}
+
 Float InterpolateSpectrumSamples(const float *lambda, const float *vals, int n, float l) {
 	if (l <= lambda[0]) return vals[0];
 	if (l >= lambda[n - 1]) return vals[n - 1];

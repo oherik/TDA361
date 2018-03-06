@@ -492,7 +492,13 @@ class RGBSpectrum : public CoefficientSpectrum<3> {
 	public:
 		RGBSpectrum(Float v = 0.f) : CoefficientSpectrum<3>(v) { }
 		RGBSpectrum(const CoefficientSpectrum<3> &v) : CoefficientSpectrum<3>(v) { }
+		static RGBSpectrum FromRGB(glm::vec3, SpectrumType type);
 	
+		glm::vec3 ToRGB() {
+			Float rgb[3];
+			ToRGB(rgb);
+			return glm::vec3(rgb[0], rgb[1], rgb[2]);
+		}
 		void ToRGB(Float *rgb) const {
 			rgb[0] = c[0];
 			rgb[1] = c[1];
@@ -550,8 +556,6 @@ class RGBSpectrum : public CoefficientSpectrum<3> {
 
 		
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //	Linear interpolation between two spectrums
