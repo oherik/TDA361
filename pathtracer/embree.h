@@ -51,6 +51,7 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	struct Intersection
 	{
+		glm::vec2 texture_coordinates;
 		glm::vec3 position; 
 		glm::vec3 geometry_normal; 
 		glm::vec3 shading_normal;

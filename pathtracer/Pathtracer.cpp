@@ -8,6 +8,7 @@
 #include "sampling.h"
 #include "spectrum.h"
 #include "Lights.h"
+#include <math.h>  
 
 using namespace std; 
 using namespace glm; 
@@ -23,6 +24,7 @@ namespace pathtracer
 	Image corners_image;
 	PointLight point_light; 
     Brdf brdf;
+	CustomSettings customSettings;
 	DepthOfField depthOfField;
 	static float epsilon = 0.02f; // for AASS
 	static int maxLevel = 2; //for AASS, should be >=1
@@ -103,7 +105,34 @@ namespace pathtracer
 			Intersection hit = getIntersection(current_ray);
 
 			// Create a material tree
-			Diffuse diffuse(hit.material->m_color);
+
+			//Use color map if available
+			labhelper::Texture color_texture = hit.material->m_color_texture;
+			vec3 diffuseColor;
+			if (color_texture.valid && pathtracer::customSettings.diffusemap) {
+				float u = hit.texture_coordinates.x;
+				float v = hit.texture_coordinates.y;
+
+				int i = round(u * (float)color_texture.width);
+				int j = round(v * (float)color_texture.height);
+				unsigned bytePerPixel = 4;
+				unsigned char* pixelOffset = color_texture.data + (i + color_texture.height * j) * bytePerPixel;
+				float r = (float) pixelOffset[0] / 255.f;
+				float g = (float) pixelOffset[1] / 255.f;
+				float b = (float) pixelOffset[2] / 255.f;
+				diffuseColor = vec3(r,g,b);
+			}
+			else {
+				diffuseColor = hit.material->m_color;
+			}
+			Diffuse diffuse(diffuseColor);
+			
+
+
+
+
+
+
 			Transparent transparent(hit.material->m_transparency, hit.material->m_color);
 
 			//Calculate opacity
@@ -126,6 +155,39 @@ namespace pathtracer
 
 			float wavelengths[3] = { hit.material->m_RGB_wavelengths.x, hit.material->m_RGB_wavelengths.y, hit.material->m_RGB_wavelengths.z };
 			TransparencyBlend transparency_blend(a, &transparent, hit.material->m_color);
+			
+			
+			
+			labhelper::Texture texture = hit.material->m_color_texture;// m_bumpmap_texture;
+
+
+
+			float u = hit.texture_coordinates.x;
+			float v = hit.texture_coordinates.y;
+			
+			int _i = round(u * (float)texture.width);
+			int _j = round(v * (float)texture.height);
+
+
+			unsigned bytePerPixel = 4;
+			unsigned char* pixelOffset =texture.data  + (_i + texture.height * _j) * bytePerPixel; //static_cast<int>(round(asd * bytePerPixel));
+			unsigned char r = pixelOffset[0];
+			unsigned char g = pixelOffset[1];
+			unsigned char b = pixelOffset[2];
+			//printf("%i, %i, \n", _i, _j);
+			if (bytePerPixel == 4) // alpha channel
+				unsigned char a = (bytePerPixel >= 4) ? pixelOffset[3] : 0xff;
+			
+			vec3 coords = vec3(hit.texture_coordinates.x, hit.texture_coordinates.y, 0.f);
+			vec3 textureSample = vec3((float)r/255.f, (float)g / 255.f, (float)b / 255.f);
+			//return Spectrum::FromRGB(textureSample, SpectrumType::Illuminant);
+
+
+
+
+
+
+
 			CustomDefined dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
 			CustomDefinedMetal metal(hit.material->m_color, hit.material->m_n, hit.material->m_k, &wavelengths[0], hit.material->m_shininess,
 				hit.material->m_fresnel);

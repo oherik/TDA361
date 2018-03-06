@@ -159,7 +159,7 @@ namespace labhelper
 				material.m_emission_texture.load(directory + m.emissive_texname, 4);
 			}
 			if (m.bump_texname != "") {
-				material.m_bumpmap_texture.load(m.bump_texname, 4);
+				material.m_bumpmap_texture.load(m.bump_texname, 3);
 			}
 			material.m_transparency = m.transmittance[0]; 
 			model->m_materials.push_back(material);
