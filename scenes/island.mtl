@@ -14,4 +14,4 @@ newmtl 01___Default
 	Ke 0.0000 0.0000 0.0000
 	map_Ka maps\islandtexture.tga
 	map_Kd maps\islandtexture.tga
-	map_bump ../scenes/bump1.jpg
+	map_bump ../scenes/bump8.jpg

@@ -57,77 +57,110 @@ namespace pathtracer
 		restart(); 
 	}
 
-	///////////////////////////////////////////////////////////////////////////
-	// Return the radiance from a certain direction wi from the environment
-	// map. 
-	///////////////////////////////////////////////////////////////////////////
-	Spectrum Lenvironment(const vec3 & wi) {
-		const float theta = acos(std::max(-1.0f, std::min(1.0f, wi.y)));
-		float phi = atan(wi.z, wi.x);
-		if (phi < 0.0f) phi = phi + 2.0f * M_PI;
-		vec2 lookup = vec2(phi / (2.0 * M_PI), theta / M_PI);
-		return environment.multiplier * Spectrum::FromRGB(environment.map.sample(lookup.x, lookup.y), SpectrumType::Illuminant);
+///////////////////////////////////////////////////////////////////////////
+// Return the radiance from a certain direction wi from the environment
+// map. 
+///////////////////////////////////////////////////////////////////////////
+Spectrum Lenvironment(const vec3 & wi) {
+	const float theta = acos(std::max(-1.0f, std::min(1.0f, wi.y)));
+	float phi = atan(wi.z, wi.x);
+	if (phi < 0.0f) phi = phi + 2.0f * M_PI;
+	vec2 lookup = vec2(phi / (2.0 * M_PI), theta / M_PI);
+	return environment.multiplier * Spectrum::FromRGB(environment.map.sample(lookup.x, lookup.y), SpectrumType::Illuminant);
+}
+
+
+//sampleLi for pointlight
+Spectrum sampleLi(Ray lightRay, Intersection hit, vec3 *wi, float *pdf) {
+
+	if (!occluded(lightRay)) {
+		vec3 lightVec = point_light.position - hit.position;
+		*wi = normalize(lightVec);
+		*pdf = 1.0f;
+
+		Spectrum lightSpectrum = Spectrum::FromRGB(point_light.color, SpectrumType::Illuminant);
+		float lengthSquared = lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z;
+
+		return lightSpectrum / lengthSquared;
 	}
+	else {
+		return Spectrum();
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Calculate the radiance going from one point (r.hitPosition()) in one 
+// direction (-r.d), through path tracing.  
+///////////////////////////////////////////////////////////////////////////
+Spectrum Li(Ray & primary_ray) {
+	Spectrum spectrumSample;
+	const vec3 fullLight = vec3(1.0f, 1.0f, 1.0f);
+	Spectrum throughput = Spectrum(1.f);
+	Ray current_ray = primary_ray;
+	vec3 last_position = vec3(0.0f);
+
+	//Task 5: bounce it up
+	for (int i = 0; i < settings.max_bounces; i++) {
 
 
-    //sampleLi for pointlight
-    Spectrum sampleLi(Ray lightRay, Intersection hit, vec3 *wi, float *pdf){
+		// Get the intersection information from the ray
+		Intersection hit = getIntersection(current_ray);
 
-        if (!occluded(lightRay)) {
-            vec3 lightVec = point_light.position - hit.position;
-            *wi = normalize(lightVec);
-            *pdf = 1.0f;
+		//Bump it a bit
+		labhelper::Texture bumpmap = hit.material->m_bumpmap_texture;
+		float u = hit.texture_coordinates.x;
+		float v = hit.texture_coordinates.y;
+		vec3 originalShadingNormal = hit.shading_normal;
+		if (bumpmap.valid && pathtracer::customSettings.bumpmap) {
+			int i = round(u * (float)bumpmap.width);
+			int j = round(v * (float)bumpmap.height);
 
-            Spectrum lightSpectrum = Spectrum::FromRGB(point_light.color, SpectrumType::Illuminant);
-            float lengthSquared = lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z;
 
-            return lightSpectrum / lengthSquared;
-        }else{
-            return Spectrum();
-        }
-    }
 
-	///////////////////////////////////////////////////////////////////////////
-	// Calculate the radiance going from one point (r.hitPosition()) in one 
-	// direction (-r.d), through path tracing.  
-	///////////////////////////////////////////////////////////////////////////
-	Spectrum Li(Ray & primary_ray) {
-		Spectrum spectrumSample;
-		const vec3 fullLight = vec3(1.0f, 1.0f, 1.0f);
-		Spectrum throughput = Spectrum(1.f);
-		Ray current_ray = primary_ray;
-		vec3 last_position = vec3(0.0f);
 
-		//Task 5: bounce it up
-		for (int i = 0; i < settings.max_bounces; i++){
-		
+			unsigned bytePerPixel = 3;
+			unsigned char* pixelOffset = bumpmap.data + (i + bumpmap.height * j) * bytePerPixel;
+			float r = (float)pixelOffset[0] / 255.f;
+			float g = (float)pixelOffset[1] / 255.f;
+			float b = (float)pixelOffset[2] / 255.f;
+			vec3 offset = 2.f*normalize(vec3(r, g, b)) - vec3(1.f);
 
-			// Get the intersection information from the ray
-			Intersection hit = getIntersection(current_ray);
 
-			//Bump it a bit
-			labhelper::Texture bumpmap = hit.material->m_bumpmap_texture;
-			float u = hit.texture_coordinates.x;
-			float v = hit.texture_coordinates.y;
-			if (bumpmap.valid && pathtracer::customSettings.bumpmap) {
-				int i = round(u * (float)bumpmap.width);
-				int j = round(v * (float)bumpmap.height);
-				unsigned bytePerPixel = 3;
-				unsigned char* pixelOffset = bumpmap.data + (i + bumpmap.height * j) * bytePerPixel;
-				float r = (float)pixelOffset[0] / 255.f;
-				float g = (float)pixelOffset[1] / 255.f;
-				float b = (float)pixelOffset[2] / 255.f;
-				vec3 offset = 2.f*vec3(r, g, b)-vec3(1.f);
+			vec3 t = cross(hit.geometry_normal, vec3(0.f, 1.f, 0.f));
+			vec3 q;
+			if (length(t) < EPSILON)
+				t = cross(hit.geometry_normal, vec3(0.f, 0.f, 1.f));
+			t = normalize(t);
+			q = normalize(cross(hit.geometry_normal, t));
 
-				vec3 originalNormal = vec3(0.f, 0.f, 1.f);
-				vec3 rotAxis = cross(originalNormal, hit.geometry_normal);
-				float rotationAngle = acos(dot(originalNormal, hit.geometry_normal));
-				vec3 newOffset = glm::rotate(offset, rotationAngle, rotAxis);
 
-				//hit.geometry_normal = normalize(glm::rotate(offset, rotationAngle, cross(originalNormal, hit.geometry_normal)));
-				//hit.shading_normal= normalize(glm::rotate(offset, rotationAngle, cross(originalNormal, hit.shading_normal)));
-				//return Spectrum::FromRGB(vec3(r, g, b), SpectrumType::Illuminant);
+			vec3 map_n = (offset);
+			mat3 tbn = mat3(t, q, hit.geometry_normal);
 
+
+			//hit.geometry_normal = normalize(tbn * map_n);
+
+
+
+			t = cross(hit.shading_normal, vec3(0.f, 1.f, 0.f));
+			if (length(t) < EPSILON)
+				t = cross(hit.shading_normal, vec3(0.f, 0.f, 1.f));
+			t = normalize(t);
+			q = normalize(cross(hit.shading_normal, t));
+
+			tbn = mat3(t, q, hit.shading_normal);
+
+
+			hit.shading_normal = normalize(tbn * map_n);
+
+
+			//hit.geometry_normal = normalize(glm::rotate(offset, rotationAngle, cross(originalNormal, hit.geometry_normal)));
+			//hit.shading_normal= normalize(glm::rotate(offset, rotationAngle, cross(originalNormal, hit.shading_normal)));
+			//return Spectrum::FromRGB(normalize(tbn * map_n), SpectrumType::Illuminant);
+			if (dot(hit.shading_normal, hit.wo) <= 0.0f){
+			//return Spectrum::FromRGB(vec3(0.f,1.f,0.f), SpectrumType::Illuminant);
+
+}
 			}
 
 
@@ -244,13 +277,13 @@ namespace pathtracer
         // Sample incoming direction
         vec3 wi;
         float pdf = 0.0f;
-        Spectrum brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
+        Spectrum brdf = mat.sample_wi(wi, hit.wo, originalShadingNormal, pdf);
 
         if (pdf < EPSILON) {
             return spectrumSample;
 			}
 			
-			float cosineTerm = abs(dot(wi, hit.shading_normal));
+			float cosineTerm = abs(dot(wi, originalShadingNormal));
 			throughput = throughput * (brdf * cosineTerm) / pdf;
 				
 			//Break if the throughput is 0
@@ -260,7 +293,7 @@ namespace pathtracer
 			}
 			
 			//Next ray
-			if (dot(hit.shading_normal, wi) > 0.0f){
+			if (dot(originalShadingNormal, wi) > 0.0f){
 				current_ray = Ray(hit.position + EPSILON * hit.geometry_normal, wi);
 			}
 			else {
