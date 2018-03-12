@@ -425,6 +425,9 @@ public:
 	glm::vec3 ToRGB() {
 		Float rgb[3];
 		ToRGB(rgb);
+		rgb[0] = ::Clamp(rgb[0], 0.f, 1.f);
+		rgb[1] = ::Clamp(rgb[1], 0.f, 1.f);
+		rgb[2] = ::Clamp(rgb[2], 0.f, 1.f);
 		return glm::vec3(rgb[0], rgb[1], rgb[2]);
 	}
 	

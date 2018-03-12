@@ -15,6 +15,7 @@ namespace pathtracer
 		bool bumpmap;
 		bool diffusemap;
 		bool spectrum;
+		bool aassDensity;
 	} customSettings;
 
 	///////////////////////////////////////////////////////////////////////////

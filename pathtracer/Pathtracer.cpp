@@ -27,7 +27,7 @@ namespace pathtracer
     Brdf brdf;
 	CustomSettings customSettings;
 	DepthOfField depthOfField;
-	static float epsilon = 0.02f; // for AASS
+	static float epsilon = 0.1f; // for AASS
 	static int maxLevel = 2; //for AASS, should be >=1
 
 	///////////////////////////////////////////////////////////////////////////
@@ -358,18 +358,15 @@ Spectrum Li(Ray & primary_ray) {
 		//return L;
 	}
 
-	float averageError(vec3 a, vec3 b) {
-		float xDiff = abs(a.x - b.x);
-		float yDiff = abs(a.y - b.y);
-		float zDiff = abs(a.z - b.z);
-		
-		return (xDiff + yDiff + zDiff) / 3.f;
+	float squaredError(vec3 a, vec3 b) {		
+		return pow(a.x - b.x, 2) + pow(a.y - b.y, 2) + pow(a.z - b.z, 2);
 	}
 
 	// Let's get some AASS in this app
-	vec3 adaptiveSupersampling(vec3 camera_pos, vec3 camera_dir, vec3 camera_right, vec3 camera_up, float focusDistance, vec3 lower_right_corner, float x, float y, vec3 X, vec3 Y, int level, vec3 firstQp = vec3(0.f), vec3 secondQp = vec3(0.f), vec3 thirdQp = vec3(0.f), vec3 fourthQp = vec3(0.f)) {	
+	vec3 adaptiveSupersampling(int* numberOfRays, vec3 camera_pos, vec3 camera_dir, vec3 camera_right, vec3 camera_up, float focusDistance, vec3 lower_right_corner, float x, float y, vec3 X, vec3 Y, int level, vec3 firstQp = vec3(0.f), vec3 secondQp = vec3(0.f), vec3 thirdQp = vec3(0.f), vec3 fourthQp = vec3(0.f)) {
 		vec3 centerColor, firstQuadrant, secondQuadrant, thirdQuadrant, fourthQuadrant;
 		Ray primaryRay;
+		(*numberOfRays)++;
 		primaryRay.o = camera_pos;
 		vec2 screenCoord = vec2(x / float(rendered_image.width), y / float(rendered_image.height));
 
@@ -411,6 +408,7 @@ Spectrum Li(Ray & primary_ray) {
 		}
 		else {
 			Ray firstQuadrantRay;
+			(*numberOfRays)++;
 			firstQuadrantRay.o = camera_pos;
 			float newX = x + sideStep;
 			float newY = y + sideStep;
@@ -439,6 +437,7 @@ Spectrum Li(Ray & primary_ray) {
 		}
 		else {
 			Ray secondQuadrantRay;
+			(*numberOfRays)++;
 			secondQuadrantRay.o = camera_pos;
 			float newX = x + sideStep;
 			float newY = y - sideStep;
@@ -467,6 +466,7 @@ Spectrum Li(Ray & primary_ray) {
 		}
 		else {
 			Ray thirdQuadrantRay;
+			(*numberOfRays)++;
 			thirdQuadrantRay.o = camera_pos;
 			float newX = x - sideStep;
 			float newY = y - sideStep;
@@ -495,6 +495,7 @@ Spectrum Li(Ray & primary_ray) {
 		}
 		else {
 			Ray fourthQuadrantRay;
+			(*numberOfRays)++;
 			fourthQuadrantRay.o = camera_pos;
 			float newX = x - sideStep;
 			float newY = y + sideStep;
@@ -521,28 +522,28 @@ Spectrum Li(Ray & primary_ray) {
 
 
 		vec3 color = vec3(0.f);
-		if (averageError(centerColor, firstQuadrant) < epsilon) {
+		if (squaredError(centerColor, firstQuadrant) < epsilon) {
 			color += 0.125f * (centerColor + firstQuadrant);
 		} else {
-			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + 0.5f*sideStep, y + 0.5f*sideStep, X, Y, level + 1, firstQuadrant, vec3(0.f), centerColor, vec3(0.f));
+			color += 0.25f * adaptiveSupersampling(numberOfRays, camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + 0.5f*sideStep, y + 0.5f*sideStep, X, Y, level + 1, firstQuadrant, vec3(0.f), centerColor, vec3(0.f));
 		}
-		if (averageError(centerColor, secondQuadrant) < epsilon) {
+		if (squaredError(centerColor, secondQuadrant) < epsilon) {
 			color += 0.125f * (centerColor + secondQuadrant);
 		}
 		else {
-			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + 0.5f*sideStep, y - 0.5f*sideStep, X, Y, level + 1, vec3(0.f), secondQuadrant, vec3(0.f), centerColor);
+			color += 0.25f * adaptiveSupersampling(numberOfRays, camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x + 0.5f*sideStep, y - 0.5f*sideStep, X, Y, level + 1, vec3(0.f), secondQuadrant, vec3(0.f), centerColor);
 		}
-		if (averageError(centerColor, thirdQuadrant) < epsilon) {
+		if (squaredError(centerColor, thirdQuadrant) < epsilon) {
 			color += 0.125f * (centerColor + thirdQuadrant);
 		}
 		else {
-			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner,  x - 0.5f*sideStep, y - 0.5f*sideStep, X, Y, level + 1, centerColor, vec3(0.f), thirdQuadrant, vec3(0.f));
+			color += 0.25f * adaptiveSupersampling(numberOfRays, camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner,  x - 0.5f*sideStep, y - 0.5f*sideStep, X, Y, level + 1, centerColor, vec3(0.f), thirdQuadrant, vec3(0.f));
 		}
-		if (averageError(centerColor, fourthQuadrant) < epsilon) {
+		if (squaredError(centerColor, fourthQuadrant) < epsilon) {
 			color += 0.125f * (centerColor + fourthQuadrant);
 		}
 		else {
-			color += 0.25f * adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - 0.5f*sideStep, y + 0.5f*sideStep, X, Y, level + 1, vec3(0.f), centerColor, vec3(0.f), fourthQuadrant);
+			color += 0.25f * adaptiveSupersampling(numberOfRays, camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, x - 0.5f*sideStep, y + 0.5f*sideStep, X, Y, level + 1, vec3(0.f), centerColor, vec3(0.f), fourthQuadrant);
 		}
 		
 		return color;// getRayColor(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y);
@@ -587,7 +588,7 @@ Spectrum Li(Ray & primary_ray) {
 		if ((int(rendered_image.number_of_samples) > settings.max_paths_per_pixel) &&
 			(settings.max_paths_per_pixel != 0)) return;
 
-		// Stop here if we have as many samples as we want
+		// For AASS
 		if (settings.supersampling_method != 0) {	
 #pragma omp parallel for
 			for (int y = 0; y < corners_image.height; y++) {
@@ -678,8 +679,11 @@ Spectrum Li(Ray & primary_ray) {
 					vec3 secondQuadrant = corners_image.data[(y) * corners_image.width + (x + 1)];
 					vec3 thirdQuadrant = corners_image.data[(y) * corners_image.width + (x)];
 					vec3 fourthQuadrant = corners_image.data[(y + 1) * corners_image.width + (x)];
-										
-					color = adaptiveSupersampling(camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y, 1, firstQuadrant, secondQuadrant, thirdQuadrant, fourthQuadrant);
+					int numberOfRays = 1; // On average, one corner per pixel (since many are shared)
+					color = adaptiveSupersampling(&numberOfRays, camera_pos, camera_dir, camera_right, camera_up, focusDistance, lower_right_corner, float(x), float(y), X, Y, 1, firstQuadrant, secondQuadrant, thirdQuadrant, fourthQuadrant);
+					if(customSettings.aassDensity) {
+						color = vec3((float)numberOfRays / 30.f, 0.f, 0.f);
+					}
 				}
 					
 				

@@ -59,6 +59,7 @@ void initialize()
 	pathtracer::customSettings.bumpmap = true;
 	pathtracer::customSettings.diffusemap = true;
 	pathtracer::customSettings.spectrum = true;
+	pathtracer::customSettings.aassDensity = false;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Set initial value of BRDF 
@@ -327,6 +328,7 @@ void gui() {
 		ImGui::Checkbox("Enable diffuse map", &pathtracer::customSettings.diffusemap); 
 		ImGui::Checkbox("Enable bumpmap", &pathtracer::customSettings.bumpmap); 
 		ImGui::Checkbox("Enable spectrum", &pathtracer::customSettings.spectrum); 
+		ImGui::Checkbox("Show AASS ray density", &pathtracer::customSettings.aassDensity);
 	}
 
 	///////////////////////////////////////////////////////////////////////////
