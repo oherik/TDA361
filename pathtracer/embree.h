@@ -55,6 +55,7 @@ namespace pathtracer
 		glm::vec3 geometry_normal; 
 		glm::vec3 shading_normal;
 		glm::vec3 wo; 
+        glm::vec2 uv;
 		const labhelper::Material * material;
 	};
 	Intersection getIntersection(const Ray & r); 
