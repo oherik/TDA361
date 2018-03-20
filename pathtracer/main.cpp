@@ -54,6 +54,14 @@ void initialize()
 {
 
 	///////////////////////////////////////////////////////////////////////////
+	// Set initial custom settings
+	///////////////////////////////////////////////////////////////////////////
+	pathtracer::customSettings.bumpmap = true;
+	pathtracer::customSettings.diffusemap = true;
+	pathtracer::customSettings.spectrum = true;
+	pathtracer::customSettings.aassDensity = false;
+
+	///////////////////////////////////////////////////////////////////////////
 	// Set initial value of BRDF 
 	///////////////////////////////////////////////////////////////////////////
     pathtracer::brdf.fresnelCurrent = 0;
@@ -75,7 +83,7 @@ void initialize()
 	#else
 	pathtracer::settings.subsampling = 4;
 	#endif
-	pathtracer::settings.supersampling_method = 1;
+	pathtracer::settings.supersampling_method = 0;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Set up light
@@ -101,7 +109,9 @@ void initialize()
 	///////////////////////////////////////////////////////////////////////////
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, 0.0f))));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), mat4(1.0f)));
-	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/BigSphere.obj"), mat4(1.0f)));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/BigSphere.obj"), mat4(1.0f)));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/island.obj"), mat4(1.0f)));
+	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/water.obj"), mat4(1.0f)));
 	mat4 asd = mat4(1.0f);
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/island.obj"), translate(
 	//	glm::rotate(asd, (glm::mediump_float)1.56, glm::vec3(1.0f, 0.0f, 0.0f))
@@ -311,6 +321,17 @@ void gui() {
 	}
 
 	///////////////////////////////////////////////////////////////////////////
+	// Toggle our modifications
+	///////////////////////////////////////////////////////////////////////////
+
+	if (ImGui::CollapsingHeader("Enable modifications", "changes_ch", true, true)) {
+		ImGui::Checkbox("Enable diffuse map", &pathtracer::customSettings.diffusemap); 
+		ImGui::Checkbox("Enable bumpmap", &pathtracer::customSettings.bumpmap); 
+		ImGui::Checkbox("Enable spectrum", &pathtracer::customSettings.spectrum); 
+		ImGui::Checkbox("Show AASS ray density", &pathtracer::customSettings.aassDensity);
+	}
+
+	///////////////////////////////////////////////////////////////////////////
 	// List all meshes in the model and show properties for the selected
 	///////////////////////////////////////////////////////////////////////////
 
@@ -389,6 +410,7 @@ void gui() {
 		
 	}
 
+	
 	///////////////////////////////////////////////////////////////////////////
 	// BRDF modifiers 
 	///////////////////////////////////////////////////////////////////////////

@@ -8,6 +8,15 @@ using namespace glm;
 
 namespace pathtracer
 {
+	///////////////////////////////////////////////////////////////////////////
+	// Changes we've made
+	///////////////////////////////////////////////////////////////////////////
+	extern struct CustomSettings {
+		bool bumpmap;
+		bool diffusemap;
+		bool spectrum;
+		bool aassDensity;
+	} customSettings;
 
 	///////////////////////////////////////////////////////////////////////////
 	// for any BRDF. 
@@ -81,7 +90,8 @@ namespace pathtracer
 	{
 	public: 
 		vec3 m_n, m_k, color;
-		CustomDefinedMetal(vec3 color, vec3 m_n, vec3 m_k, float _shininess, float _R0) : color(color), m_n(m_n), m_k(m_k), CustomDefined(_shininess, _R0) {}
+		float *lambda; //The wavelengths associated with the n and k values
+		CustomDefinedMetal(vec3 color, vec3 m_n, vec3 m_k, float *lambda, float _shininess, float _R0) : color(color), m_n(m_n), m_k(m_k), lambda(lambda), CustomDefined(_shininess, _R0) {}
 		virtual Spectrum refraction_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 		virtual Spectrum reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 	};

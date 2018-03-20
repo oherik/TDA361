@@ -29,6 +29,7 @@ namespace labhelper
 		glm::vec3	m_g;
 		glm::vec3	m_n;
 		glm::vec3	m_k;
+		glm::vec3	m_RGB_wavelengths;
 		float		m_reflectivity;
 		float		m_shininess;
 		float		m_metalness; 
@@ -41,6 +42,7 @@ namespace labhelper
 		Texture	m_metalness_texture;
 		Texture	m_fresnel_texture;
 		Texture	m_emission_texture;
+		Texture	m_bumpmap_texture;
 	};
 
 	struct Mesh

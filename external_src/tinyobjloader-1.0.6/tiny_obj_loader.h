@@ -140,6 +140,9 @@ typedef struct {
   real_t specular[3];
   real_t transmittance[3];
   real_t emission[3];
+  real_t n[3];
+  real_t k[3];
+  real_t RGB_wavelengths[3];
   real_t shininess;
   real_t ior;       // index of refraction
   real_t dissolve;  // 1 == opaque; 0 == fully transparent
@@ -865,7 +868,12 @@ static void InitMaterial(material_t *material) {
     material->specular[i] = 0.f;
     material->transmittance[i] = 0.f;
     material->emission[i] = 0.f;
+	material->n[i] = 1.f;
+	material->k[i] = 1.f;
   }
+  material->RGB_wavelengths[0] = 620.f; // R
+  material->RGB_wavelengths[1] = 540.f;	// G
+  material->RGB_wavelengths[2] = 450.f;	// B
   material->illum = 0;
   material->dissolve = 1.f;
   material->shininess = 1.f;
@@ -1144,8 +1152,8 @@ void LoadMtl(std::map<std::string, int> *material_map,
 
     // PBR: roughness
     if (token[0] == 'P' && token[1] == 'r' && IS_SPACE(token[2])) {
-      token += 2;
-      material.roughness = parseReal(&token);
+        token += 2;
+		material.roughness = parseReal(&token);
       continue;
     }
 
@@ -1220,7 +1228,7 @@ void LoadMtl(std::map<std::string, int> *material_map,
 
     // specular highlight texture
     if ((0 == strncmp(token, "map_Ns", 6)) && IS_SPACE(token[6])) {
-      token += 7;
+      token += 7;	
       ParseTextureNameAndOption(&(material.specular_highlight_texname),
                                 &(material.specular_highlight_texopt), token,
                                 /* is_bump */ false);
@@ -1308,6 +1316,39 @@ void LoadMtl(std::map<std::string, int> *material_map,
           /* is_bump */ false);  // @fixme { is_bump will be true? }
       continue;
     }
+
+	// PBR: n
+	if (token[0] == 'P' && token[1] == 'n' && IS_SPACE(token[2])) {
+		token += 2;
+		real_t r, g, b;
+		parseReal3(&r, &g, &b, &token);
+		material.n[0] = r;
+		material.n[1] = g;
+		material.n[2] = b;
+		continue;
+	}
+
+	// PBR: k
+	if (token[0] == 'P' && token[1] == 'o' && IS_SPACE(token[2])) {
+		token += 2;
+		real_t r, g, b;
+		parseReal3(&r, &g, &b, &token);
+		material.k[0] = r;
+		material.k[1] = g;
+		material.k[2] = b;
+		continue;
+	}
+
+	// PBR: RGB wavelengths
+	if (token[0] == 'P' && token[1] == 'p' && IS_SPACE(token[2])) {
+		token += 2;
+		real_t r, g, b;
+		parseReal3(&r, &g, &b, &token);
+		material.RGB_wavelengths[0] = r;
+		material.RGB_wavelengths[1] = g;
+		material.RGB_wavelengths[2] = b;
+		continue;
+	}
 
     // unknown parameter
     const char *_space = strchr(token, ' ');

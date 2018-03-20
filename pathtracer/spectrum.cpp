@@ -28,7 +28,7 @@ SampledSpectrum SampledSpectrum::rgbIllum2SpectBlue;
 //	Check if the samples are sorted by wavelength
 ///////////////////////////////////////////////////////////////////////////////
 bool SpectrumSamplesSorted(const Float *lambda, const Float *v, int n) {
-	for (int i = 1; i < nSpectralSamples; ++i) {
+	for (int i = 1; i < n; ++i) {
 		if (lambda[i] < lambda[i - 1]) return false;
 	}
 	return true;
@@ -143,6 +143,11 @@ SampledSpectrum::SampledSpectrum(const RGBSpectrum &r, SpectrumType t) {
 	*this = SampledSpectrum::FromRGB(rgb, t);
 }
 
+
+RGBSpectrum RGBSpectrum::FromRGB(glm::vec3 rgb, SpectrumType type) {
+	const Float rgbArray[3] = { rgb.x, rgb.y, rgb.z };
+	return RGBSpectrum::FromRGB(rgbArray, type);
+}
 
 Float InterpolateSpectrumSamples(const float *lambda, const float *vals, int n, float l) {
 	if (l <= lambda[0]) return vals[0];

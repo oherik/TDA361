@@ -6,7 +6,7 @@ newmtl 13___Default
 	Ni 1.5000
 	d 1.0000
 	Tr 1.0000
-	Tf 1.0000 1.0000 1.0000 
+	Tf 1.0000 1.0000 1.0000
 	illum 2
 	Ka 0.2510 0.2510 0.2510
 	Kd 0.6235 0.6235 0.6235
@@ -14,3 +14,4 @@ newmtl 13___Default
 	Ke 0.0000 0.0000 0.0000
 	map_Ka alterwat02.tga
 	map_Kd alterwat02.tga
+	map_bump ../scenes/bump8.jpg

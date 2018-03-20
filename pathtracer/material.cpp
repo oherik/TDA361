@@ -365,7 +365,10 @@ namespace pathtracer
 
 		if (den < EPSILON) return Spectrum();
 
-		return Spectrum::FromRGB(vec3(F_wi_1, F_wi_2, F_wi_3) * D_wh * G_wiwo / den, SpectrumType::Reflectance);
+		
+		const Float percentageReflected[3] = { F_wi_1, F_wi_2, F_wi_3 };
+
+		return Spectrum::FromSampled(&lambda[0], &(percentageReflected[0]), 3) * D_wh * G_wiwo / den; //3 since we only allow three values for the n and k values, can be extended in the future for more accurate results
 	};
 
 
