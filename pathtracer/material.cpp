@@ -141,18 +141,26 @@ namespace pathtracer
 	// A Lambertian (diffuse) material
 	///////////////////////////////////////////////////////////////////////////
 	Spectrum Diffuse::f(const vec3 & wi, const vec3 & wo, const vec3 & n) {
-		if (dot(wi, n) <= 0.0f) return Spectrum();
-		if (!sameHemisphere(wi, wo, n)) return Spectrum();
+		if (dot(wi, n) <= 0.0f) {
+			return Spectrum::FromRGB(vec3(0.f, 0.f, 0.f), SpectrumType::Illuminant);
+		}; 
+		if (!sameHemisphere(wi, wo, n)) {
+			return Spectrum::FromRGB(vec3(0.f, 0.f, 0.f), SpectrumType::Illuminant);
+		}
 		return Spectrum::FromRGB((1.0f / M_PI) * color, SpectrumType::Reflectance);
 	}
 
 	Spectrum Diffuse::sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {
+		
+
 		vec3 tangent = normalize(perpendicular(n));
 		vec3 bitangent = normalize(cross(tangent, n));
 		vec3 sample = cosineSampleHemisphere();
 		wi = normalize(sample.x * tangent + sample.y * bitangent + sample.z * n);
+
 		if (dot(wi, n) <= 0.0f) p = 0.0f;
 		else p = max(0.0f, dot(n, wi)) / M_PI;
+		
 		return f(wi, wo, n);
 	}
 
@@ -235,6 +243,7 @@ namespace pathtracer
 		float den = (4.0f * ndotwo*ndotwi);
 
 		if (den < EPSILON) return Spectrum();
+
 
 		return Spectrum::FromRGB(vec3(F_wi*D_wh*G_wiwo / den), SpectrumType::Reflectance);
 

@@ -95,6 +95,7 @@ Ps 0
 Pr 0
 Ke 0 0 0
 Tf 0 0 0
+map_bump ../scenes/bump8.jpg
 newmtl RoughMetal
 Kd 0.784314 0.784314 0.980392
 Ks 1 1 1
