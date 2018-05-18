@@ -1,4 +1,3 @@
-
 #include <GL/glew.h>
 #include <stb_image.h>
 #include <chrono>
@@ -107,11 +106,12 @@ void initialize()
 	///////////////////////////////////////////////////////////////////////////
 	// Load .obj models to scene
 	///////////////////////////////////////////////////////////////////////////
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/cornell.obj"), mat4(1.0f)));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, 0.0f))));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), mat4(1.0f)));
-	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/BigSphere.obj"), mat4(1.0f)));
+	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/BigSphere.obj"), mat4(1.0f)));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/island.obj"), mat4(1.0f)));
-	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/water.obj"), mat4(1.0f)));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/water.obj"), mat4(1.0f)));
 	mat4 asd = mat4(1.0f);
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/island.obj"), translate(
 	//	glm::rotate(asd, (glm::mediump_float)1.56, glm::vec3(1.0f, 0.0f, 0.0f))

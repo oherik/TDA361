@@ -10,7 +10,7 @@
 #include <string>
 #include <cassert>
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #undef main
 #include <GL/glew.h>
 
