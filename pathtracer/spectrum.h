@@ -23,8 +23,8 @@ typedef float Float;
 class SampledSpectrum;
 class RGBSpectrum;
 template <int nSamples> class CoefficientSpectrum;
-//typedef RGBSpectrum Spectrum;
-typedef SampledSpectrum Spectrum;
+typedef RGBSpectrum Spectrum;
+//typedef SampledSpectrum Spectrum;
 enum class SpectrumType { Reflectance, Illuminant };
 
 extern bool SpectrumSamplesSorted(const float *lambda, const float *vals, int n);

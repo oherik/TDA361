@@ -202,30 +202,7 @@ Spectrum Li(Ray & primary_ray) {
 
 
 			float wavelengths[3] = { hit.material->m_RGB_wavelengths.x, hit.material->m_RGB_wavelengths.y, hit.material->m_RGB_wavelengths.z };
-			/*
-			labhelper::Texture texture = hit.material->m_color_texture;// m_bumpmap_texture;
-
-
-
-			int _i = round(u * (float)texture.width);
-			int _j = round(v * (float)texture.height);
-
-
-			unsigned bytePerPixel = 4;
-			unsigned char* pixelOffset =texture.data  + (_i + texture.height * _j) * bytePerPixel; //static_cast<int>(round(asd * bytePerPixel));
-			unsigned char r = pixelOffset[0];
-			unsigned char g = pixelOffset[1];
-			unsigned char b = pixelOffset[2];
-			//printf("%i, %i, \n", _i, _j);
-			if (bytePerPixel == 4) // alpha channel
-				unsigned char a = (bytePerPixel >= 4) ? pixelOffset[3] : 0xff;
 			
-			vec3 coords = vec3(hit.texture_coordinates.x, hit.texture_coordinates.y, 0.f);
-			vec3 textureSample = vec3((float)r/255.f, (float)g / 255.f, (float)b / 255.f);
-			//return Spectrum::FromRGB(textureSample, SpectrumType::Illuminant);
-
-			*/
-
 
 
 
