@@ -1,4 +1,3 @@
-
 #include <GL/glew.h>
 #include <stb_image.h>
 #include <chrono>
@@ -107,10 +106,12 @@ void initialize()
 	///////////////////////////////////////////////////////////////////////////
 	// Load .obj models to scene
 	///////////////////////////////////////////////////////////////////////////
+
 	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, 0.0f))));
 	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), mat4(1.0f)));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/cornell.obj"), scale(mat4(1.0f), vec3(1.f))));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/bigsphere.obj"), scale(mat4(1.0f), vec3(0.05f))));
+
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/water.obj"), scale(mat4(1.0f),vec3(0.02f))));
 	//mat4 asd = mat4(1.0f);
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/island.obj"), translate(

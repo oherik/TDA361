@@ -50,6 +50,7 @@ namespace pathtracer{
         
 	class Light{
         public: 
+            Light();
             Light(int flags, const mat4 &LightToWorld, int nSamples = 1)
             : flags(flags), nSamples(max(1, nSamples)), LightToWorld(LightToWorld),
             WorldToLight(inverse(LightToWorld)) {
@@ -66,6 +67,7 @@ namespace pathtracer{
 
     class AreaLight : public Light {
         public:
+            AreaLight();
             AreaLight(mat4 LightToWorld, int nSamples = 1)
                 : Light(4, LightToWorld, nSamples){};
             virtual Spectrum L(const vec3 &coordinate, const vec3 &w) {}; 
@@ -76,6 +78,7 @@ namespace pathtracer{
 
     class DiffuseAreaLight : public AreaLight {
         public:
+            DiffuseAreaLight();
             const Spectrum Lemit;
             const float area;
             const Shape * shape;
@@ -85,10 +88,10 @@ namespace pathtracer{
             : AreaLight(LightToWorld, nSamples), Lemit(Lemit),
             shape(shape), area(shape->area()) {};
      
-            virtual float Pdf_Li(const Intersection &ref, const vec3 &wi) const;
-            virtual Spectrum L(const vec3 &n, const vec3 &w) override;
-            virtual Spectrum Sample_Li(const Intersection &ref, const vec2 &u, vec3 *wi, float *pdf) override;
-            virtual Spectrum Power() const = 0;
+            float Pdf_Li(const Intersection &ref, const vec3 &wi);
+            Spectrum L(const vec3 &n, const vec3 &w) override;
+            Spectrum Sample_Li(const Intersection &ref, const vec2 &u, vec3 *wi, float *pdf) override;
+            Spectrum Power();
     };
 
     bool quadratic(float a, float b, float c, float *t0, float *t1);

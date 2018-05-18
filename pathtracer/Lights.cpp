@@ -161,11 +161,11 @@ namespace pathtracer
     }
 
 
-    float DiffuseAreaLight::Pdf_Li(const Intersection &ref, const vec3 &wi) const{
+    float DiffuseAreaLight::Pdf_Li(const Intersection &ref, const vec3 &wi) {
         return shape->Pdf(ref, wi);
     }
 
-    Spectrum DiffuseAreaLight::Power() const {
+    Spectrum DiffuseAreaLight::Power() {
         return Lemit * area * M_PI;
     }
 
