@@ -14,4 +14,4 @@ newmtl 13___Default
 	Ke 0.0000 0.0000 0.0000
 	map_Ka alterwat02.tga
 	map_Kd alterwat02.tga
-	map_bump ../scenes/bump8.jpg
+	map_bump ../scenes/bump_normal.png

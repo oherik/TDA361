@@ -115,7 +115,7 @@ Spectrum Li(Ray & primary_ray) {
 		labhelper::Texture bumpmap = hit.material->m_bumpmap_texture;
 		float u = hit.texture_coordinates.x;
 		float v = hit.texture_coordinates.y;
-		vec3 originalShadingNormal = hit.shading_normal;
+		//vec3 originalShadingNormal = hit.shading_normal;
 		if (bumpmap.valid && pathtracer::customSettings.bumpmap) {
 			int i = round(u * (float)bumpmap.width);
 			int j = round(v * (float)bumpmap.height);
@@ -128,44 +128,31 @@ Spectrum Li(Ray & primary_ray) {
 			float r = (float)pixelOffset[0] / 255.f;
 			float g = (float)pixelOffset[1] / 255.f;
 			float b = (float)pixelOffset[2] / 255.f;
-			vec3 offset = 2.f*normalize(vec3(r, g, b)) - vec3(1.f);
+			vec3 offset = 2.f*vec3(r, g, b) - vec3(1.f);
+			
+
+			vec3 tangent = normalize(perpendicular(hit.shading_normal));
+			vec3 bitangent = normalize(cross(tangent, hit.shading_normal));
+			mat3 tbn = mat3(tangent, bitangent, hit.shading_normal);
+			vec3 new_normal = normalize(tbn * offset);
 
 
-			vec3 t = cross(hit.geometry_normal, vec3(0.f, 1.f, 0.f));
-			vec3 q;
-			if (length(t) < EPSILON)
-				t = cross(hit.geometry_normal, vec3(0.f, 0.f, 1.f));
-			t = normalize(t);
-			q = normalize(cross(hit.geometry_normal, t));
+			//Clamp it so it doesn't point underneath the surface
+			if (dot(hit.geometry_normal, hit.shading_normal) < 0) {
+				return Spectrum::FromRGB(vec3(1.f, 0.f, 0.f), SpectrumType::Illuminant);
+			}
 
+			//Clamp it to 90 degrees to avoid nasty artifacts.
+			if (dot(new_normal, hit.wo) <= 0) {
+				//return Spectrum::FromRGB(vec3(1.f, 1.f, 1.f), SpectrumType::Illuminant);
+				vec3 rotation_vector = normalize(cross(cross(hit.wo, new_normal), hit.wo));
+				hit.shading_normal = normalize(0.02f*hit.wo + rotation_vector); // 89 degrees
+			}
+			else {
+				hit.shading_normal = new_normal;
+			}
 
-			vec3 map_n = (offset);
-			mat3 tbn = mat3(t, q, hit.geometry_normal);
-
-
-			//hit.geometry_normal = normalize(tbn * map_n);
-
-
-
-			t = cross(hit.shading_normal, vec3(0.f, 1.f, 0.f));
-			if (length(t) < EPSILON)
-				t = cross(hit.shading_normal, vec3(0.f, 0.f, 1.f));
-			t = normalize(t);
-			q = normalize(cross(hit.shading_normal, t));
-
-			tbn = mat3(t, q, hit.shading_normal);
-
-
-			hit.shading_normal = normalize(tbn * map_n);
-
-
-			//hit.geometry_normal = normalize(glm::rotate(offset, rotationAngle, cross(originalNormal, hit.geometry_normal)));
-			//hit.shading_normal= normalize(glm::rotate(offset, rotationAngle, cross(originalNormal, hit.shading_normal)));
-			//return Spectrum::FromRGB(normalize(tbn * map_n), SpectrumType::Illuminant);
-			if (dot(hit.shading_normal, hit.wo) <= 0.0f){
-			//return Spectrum::FromRGB(vec3(0.f,1.f,0.f), SpectrumType::Illuminant);
-
-}
+		
 			}
 
 
@@ -174,6 +161,7 @@ Spectrum Li(Ray & primary_ray) {
 
 			//Use color map if available
 			labhelper::Texture color_texture = hit.material->m_color_texture;
+
 			vec3 diffuseColor;
 			if (color_texture.valid && pathtracer::customSettings.diffusemap) {
 				int i = round(u * (float)color_texture.width);
@@ -215,12 +203,11 @@ Spectrum Li(Ray & primary_ray) {
 			
 			TransparencyBlend transparency_blend(a, &transparent, hit.material->m_color);
 			*/
-
+			
 
 
 			float wavelengths[3] = { hit.material->m_RGB_wavelengths.x, hit.material->m_RGB_wavelengths.y, hit.material->m_RGB_wavelengths.z };
 /*
-			
 			labhelper::Texture texture = hit.material->m_color_texture;// m_bumpmap_texture;
 
 
@@ -246,10 +233,6 @@ Spectrum Li(Ray & primary_ray) {
             */
 
 
-
-
-
-
 			CustomDefined dielectric(hit.material->m_shininess, hit.material->m_fresnel, &diffuse);
 			CustomDefinedMetal metal(hit.material->m_color, hit.material->m_n, hit.material->m_k, &wavelengths[0], hit.material->m_shininess,
 				hit.material->m_fresnel);
@@ -260,7 +243,7 @@ Spectrum Li(Ray & primary_ray) {
 			
 			
 			BRDF & mat = reflectivity_blend;
-
+			
 			// Update last hit position for the next distance calculation
 			last_position = vec3(hit.position);
 
@@ -285,33 +268,33 @@ Spectrum Li(Ray & primary_ray) {
         // Sample incoming direction
         vec3 wi;
         float pdf = 0.0f;
-        Spectrum brdf = mat.sample_wi(wi, hit.wo, originalShadingNormal, pdf);
+        Spectrum brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
 
         if (pdf < EPSILON) {
             return spectrumSample;
-			}
+		}
 			
-			float cosineTerm = abs(dot(wi, originalShadingNormal));
-			throughput = throughput * (brdf * cosineTerm) / pdf;
+		float cosineTerm = abs(dot(wi, hit.shading_normal));
+		throughput = throughput * (brdf * cosineTerm) / pdf;
 				
-			//Break if the throughput is 0
-			if(throughput.IsBlack())
-			{
-				return spectrumSample;
-			}
+		//Break if the throughput is 0
+		if(throughput.IsBlack())
+		{
+			return spectrumSample;
+		}
 			
-			//Next ray
-			if (dot(originalShadingNormal, wi) > 0.0f){
-				current_ray = Ray(hit.position + EPSILON * hit.geometry_normal, wi);
-			}
-			else {
-				current_ray = Ray(hit.position - EPSILON * hit.geometry_normal, wi);
-			}
+		//Next ray
+		if (dot(hit.shading_normal, wi) > 0.0f){
+			current_ray = Ray(hit.position + EPSILON * hit.geometry_normal, wi);
+		}
+		else {
+			current_ray = Ray(hit.position - EPSILON * hit.geometry_normal, wi);
+		}
 
-			//Intersect the new ray
-			if (!intersect(current_ray)){
-				return spectrumSample + throughput * Lenvironment(current_ray.d);
-			}
+		//Intersect the new ray
+		if (!intersect(current_ray)){
+			return spectrumSample + throughput * Lenvironment(current_ray.d);
+		}
 
 		}
 
