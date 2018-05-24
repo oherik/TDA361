@@ -1,3 +1,5 @@
+#ifndef PATHTRACER_H
+#define PATHTRACER_H
 #pragma once
 #include <glm/glm.hpp>
 #include <vector>
@@ -6,6 +8,8 @@
 #include "HDRImage.h"
 #include "dof.h"
 #include "supersampling.h"
+#include "Lights.h"
+
 
 #ifdef M_PI
 #undef M_PI
@@ -61,6 +65,11 @@ namespace pathtracer
 		vec3  position;
 	} point_light;
 
+	///////////////////////////////////////////////////////////////////////////////
+	// The arealight source
+	///////////////////////////////////////////////////////////////////////////////
+	extern Shape * shape;
+	extern AreaLight * areaLight;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Restart rendering of image
@@ -79,3 +88,4 @@ namespace pathtracer
 	void tracePaths(vec3 camera_pos, vec3 camera_dir, vec3 camera_up);
 };
 
+#endif /*PATHTRACER_H*/

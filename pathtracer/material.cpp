@@ -2,6 +2,8 @@
 #include "sampling.h"
 #include <complex>
 
+using namespace std;
+
 namespace pathtracer
 {
 
@@ -69,7 +71,7 @@ namespace pathtracer
 
     //Cook-torrance
     float cookGeom(float ndotwh, float ndotwo, float wodotwh, float ndotwi){
-	    return min(1.0f, min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
+	    return std::min(1.0f, std::min(2.0f * ndotwh*ndotwo / wodotwh, 2.0f * ndotwh*ndotwi / wodotwh));
     }
 
     //Smith-Schlick
@@ -159,7 +161,7 @@ namespace pathtracer
 		wi = normalize(sample.x * tangent + sample.y * bitangent + sample.z * n);
 
 		if (dot(wi, n) <= 0.0f) p = 0.0f;
-		else p = max(0.0f, dot(n, wi)) / M_PI;
+		else p = std::max(0.0f, dot(n, wi)) / M_PI;
 		
 		return f(wi, wo, n);
 	}
@@ -225,11 +227,11 @@ namespace pathtracer
 	Spectrum CustomDefined::reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n) {
 		vec3 wh = normalize(wi + wo);
 	
-		float whdotwi = max(0.0f, dot(wh, wi));
-		float ndotwh = max(0.0f, dot(n, wh));
-		float wodotwh = max(0.0f, dot(wo, wh));
-		float ndotwi = max(0.0f , dot(n, wi));
-		float ndotwo = max(0.0f, dot(n, wo));
+		float whdotwi = std::max(0.0f, dot(wh, wi));
+		float ndotwh = std::max(0.0f, dot(n, wh));
+		float wodotwh = std::max(0.0f, dot(wo, wh));
+		float ndotwi = std::max(0.0f , dot(n, wi));
+		float ndotwo = std::max(0.0f, dot(n, wo));
 
         float F_wi = fresnel(R0, whdotwi);
         //dynamic
@@ -259,7 +261,7 @@ namespace pathtracer
 			vec3 bitangent = normalize(cross(tangent, n));
 			float phi = 2.0f * M_PI * randf();
 			float cos_theta = pow(randf(), 1.0f / (shininess + 1.0f));
-			float sin_theta = sqrt(max(0.0f, 1.0f - cos_theta * cos_theta));
+			float sin_theta = sqrt(std::max(0.0f, 1.0f - cos_theta * cos_theta));
 			vec3 wh = normalize(sin_theta * cos(phi) * tangent +
 				sin_theta * sin(phi) * bitangent +
 				cos_theta * n);
@@ -344,11 +346,11 @@ namespace pathtracer
 
 		vec3 wh = normalize(wi + wo);
 
-		float whdotwi = max(0.0f, dot(wh, wi));
-		float ndotwh = max(0.0f, dot(n, wh));
-		float wodotwh = max(0.0f, dot(wo, wh));
-		float ndotwi = max(0.0f, dot(n, wi));
-		float ndotwo = max(0.0f, dot(n, wo));
+		float whdotwi = std::max(0.0f, dot(wh, wi));
+		float ndotwh = std::max(0.0f, dot(n, wh));
+		float wodotwh = std::max(0.0f, dot(wo, wh));
+		float ndotwi = std::max(0.0f, dot(n, wi));
+		float ndotwo = std::max(0.0f, dot(n, wo));
 
 		vec3 n_normalized = normalize(n);
 		vec3 wi_normalized = normalize(wi);

@@ -1,3 +1,5 @@
+#ifndef EMBREE_H
+#define EMBREE_H
 #pragma once
 #include <embree2/rtcore.h>
 #include <embree2/rtcore_ray.h>
@@ -72,3 +74,4 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	bool occluded(Ray &r);
 }
+#endif /*EMBREE_H*/

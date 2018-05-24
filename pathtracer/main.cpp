@@ -13,6 +13,7 @@
 #include "embree.h"
 #include "spectrum.h"
 #include "material.h"
+#include "Lights.h"
 
 using namespace glm;
 using namespace std; 
@@ -92,6 +93,20 @@ void initialize()
 	pathtracer::point_light.position = vec3(-10.0f, 40.0f, 10.0f);
 
 	///////////////////////////////////////////////////////////////////////////
+	// Set up arealight
+	///////////////////////////////////////////////////////////////////////////
+	//Initialize position and transformation matrixes
+	vec3 * aLightPos = new vec3(0.0f, 0.0f, 0.0f);
+	mat4 * lightToWorld = new mat4(1.0f);
+	*lightToWorld += translate(*aLightPos);
+	mat4 * worldToLight = new mat4(1.0f);
+	*worldToLight = inverse(*lightToWorld);
+	
+	//Create shape and arealight
+	pathtracer::shape = new pathtracer::Disk(lightToWorld, worldToLight, 0.0f, 20.0f, 0.0f, 360.0f);
+	pathtracer::areaLight = new pathtracer::DiffuseAreaLight(lightToWorld, Spectrum(1.0f), 1, pathtracer::shape);
+
+	///////////////////////////////////////////////////////////////////////////
 	// Set up depth of field
 	///////////////////////////////////////////////////////////////////////////
 	pathtracer::depthOfField.lensRadius = 0.25f; // 0 = disable
@@ -107,8 +122,9 @@ void initialize()
 	// Load .obj models to scene
 	///////////////////////////////////////////////////////////////////////////
 
-	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, 0.0f))));
-	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), mat4(1.0f)));
+	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, -10.0f, -10.0f))));
+	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, -10.0f))));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), mat4(1.0f)));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/cornell.obj"), scale(mat4(1.0f), vec3(1.f))));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/bigsphere.obj"), scale(mat4(1.0f), vec3(0.05f))));
 

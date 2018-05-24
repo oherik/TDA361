@@ -1,3 +1,5 @@
+#ifndef SPECTRUM_H
+#define SPECTRUM_H
 #pragma once
 #include <vector>
 #include <iostream>
@@ -584,4 +586,4 @@ template <typename Predicate> int FindInterval(int size,
 	}
 	return Clamp(first - 1, 0, size - 2);
 }
-
+#endif /*SPECTRUM_H*/

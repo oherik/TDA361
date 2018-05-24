@@ -1,3 +1,5 @@
+#ifndef MATERIAL_H
+#define MATERIAL_H
 #pragma once
 #include <glm/glm.hpp>
 #include "Pathtracer.h"
@@ -129,3 +131,4 @@ namespace pathtracer
 	
 
 }
+#endif

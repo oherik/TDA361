@@ -15,7 +15,7 @@ using namespace std;
 using namespace glm; 
 
 namespace pathtracer
-{
+{ 
 	///////////////////////////////////////////////////////////////////////////////
 	// Global variables
 	///////////////////////////////////////////////////////////////////////////////
@@ -24,6 +24,7 @@ namespace pathtracer
 	Image rendered_image; 
 	Image corners_image;
 	PointLight point_light; 
+	
     Brdf brdf;
 	CustomSettings customSettings;
 	DepthOfField depthOfField;
@@ -33,7 +34,9 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	// Defining AreaLights here, hope you dont mind.. 
 	///////////////////////////////////////////////////////////////////////////
-    //DiffuseAreaLight areaLight;
+	
+	Shape * shape;
+	AreaLight * areaLight;
 
 	///////////////////////////////////////////////////////////////////////////
 	// Restart rendering of image
@@ -104,55 +107,72 @@ Spectrum Li(Ray & primary_ray) {
 	Ray current_ray = primary_ray;
 	vec3 last_position = vec3(0.0f);
 
+
 	//Task 5: bounce it up
 	for (int i = 0; i < settings.max_bounces; i++) {
 
+		float * thit = new float();
+		Intersection * lightIntersection = new Intersection();
+		bool hitLight = shape->Intersect(current_ray, thit, lightIntersection);
 
 		// Get the intersection information from the ray
 		Intersection hit = getIntersection(current_ray);
 
-		//Bump it a bit
-		labhelper::Texture bumpmap = hit.material->m_bumpmap_texture;
-		float u = hit.texture_coordinates.x;
-		float v = hit.texture_coordinates.y;
-		//vec3 originalShadingNormal = hit.shading_normal;
-		if (bumpmap.valid && pathtracer::customSettings.bumpmap) {
-			int i = round(u * (float)bumpmap.width);
-			int j = round(v * (float)bumpmap.height);
-
-
-
-
-			unsigned bytePerPixel = 3;
-			unsigned char* pixelOffset = bumpmap.data + (i + bumpmap.height * j) * bytePerPixel;
-			float r = (float)pixelOffset[0] / 255.f;
-			float g = (float)pixelOffset[1] / 255.f;
-			float b = (float)pixelOffset[2] / 255.f;
-			vec3 offset = 2.f*vec3(r, g, b) - vec3(1.f);
-			
-
-			vec3 tangent = normalize(perpendicular(hit.shading_normal));
-			vec3 bitangent = normalize(cross(tangent, hit.shading_normal));
-			mat3 tbn = mat3(tangent, bitangent, hit.shading_normal);
-			vec3 new_normal = normalize(tbn * offset);
-
-
-			//Clamp it so it doesn't point underneath the surface
-			if (dot(hit.geometry_normal, hit.shading_normal) < 0) {
-				return Spectrum::FromRGB(vec3(1.f, 0.f, 0.f), SpectrumType::Illuminant);
+		//if light is in the path of the ray check which one is closer
+		if (hitLight) {
+			//If the ray hit light first return light.
+			float lightray = distance(current_ray.o, lightIntersection->position);
+			float hitray = distance(current_ray.o, hit.position);
+			float lightHitDistance = lightray - hitray;
+			if (lightHitDistance <= 0.0f) {
+				Spectrum areaLH = areaLight->getLEmit();
+				return spectrumSample + areaLH * throughput;
 			}
+		}
 
-			//Clamp it to 90 degrees to avoid nasty artifacts.
-			if (dot(new_normal, hit.wo) <= 0) {
-				//return Spectrum::FromRGB(vec3(1.f, 1.f, 1.f), SpectrumType::Illuminant);
-				vec3 rotation_vector = normalize(cross(cross(hit.wo, new_normal), hit.wo));
-				hit.shading_normal = normalize(0.02f*hit.wo + rotation_vector); // 89 degrees
-			}
-			else {
-				hit.shading_normal = new_normal;
-			}
 
-		
+			//Bump it a bit
+			labhelper::Texture bumpmap = hit.material->m_bumpmap_texture;
+			float u = hit.texture_coordinates.x;
+			float v = hit.texture_coordinates.y;
+			//vec3 originalShadingNormal = hit.shading_normal;
+			if (bumpmap.valid && pathtracer::customSettings.bumpmap) {
+				int i = round(u * (float)bumpmap.width);
+				int j = round(v * (float)bumpmap.height);
+
+
+
+
+				unsigned bytePerPixel = 3;
+				unsigned char* pixelOffset = bumpmap.data + (i + bumpmap.height * j) * bytePerPixel;
+				float r = (float)pixelOffset[0] / 255.f;
+				float g = (float)pixelOffset[1] / 255.f;
+				float b = (float)pixelOffset[2] / 255.f;
+				vec3 offset = 2.f*vec3(r, g, b) - vec3(1.f);
+
+
+				vec3 tangent = normalize(perpendicular(hit.shading_normal));
+				vec3 bitangent = normalize(cross(tangent, hit.shading_normal));
+				mat3 tbn = mat3(tangent, bitangent, hit.shading_normal);
+				vec3 new_normal = normalize(tbn * offset);
+
+
+				//Clamp it so it doesn't point underneath the surface
+				if (dot(hit.geometry_normal, hit.shading_normal) < 0) {
+					return Spectrum::FromRGB(vec3(1.f, 0.f, 0.f), SpectrumType::Illuminant);
+				}
+
+				//Clamp it to 90 degrees to avoid nasty artifacts.
+				if (dot(new_normal, hit.wo) <= 0) {
+					//return Spectrum::FromRGB(vec3(1.f, 1.f, 1.f), SpectrumType::Illuminant);
+					vec3 rotation_vector = normalize(cross(cross(hit.wo, new_normal), hit.wo));
+					hit.shading_normal = normalize(0.02f*hit.wo + rotation_vector); // 89 degrees
+				}
+				else {
+					hit.shading_normal = new_normal;
+				}
+
+
 			}
 
 
@@ -168,21 +188,21 @@ Spectrum Li(Ray & primary_ray) {
 				int j = round(v * (float)color_texture.height);
 				unsigned bytePerPixel = 4;
 				unsigned char* pixelOffset = color_texture.data + (i + color_texture.height * j) * bytePerPixel;
-				float r = (float) pixelOffset[0] / 255.f;
-				float g = (float) pixelOffset[1] / 255.f;
-				float b = (float) pixelOffset[2] / 255.f;
-				diffuseColor = vec3(r,g,b);
+				float r = (float)pixelOffset[0] / 255.f;
+				float g = (float)pixelOffset[1] / 255.f;
+				float b = (float)pixelOffset[2] / 255.f;
+				diffuseColor = vec3(r, g, b);
 			}
 			else {
 				diffuseColor = hit.material->m_color;
 			}
 			Diffuse diffuse(diffuseColor);
-		
+
 			/*
 			Transparent transparent(hit.material->m_transparency, hit.material->m_color);
 
 			//Calculate opacity
-			
+
 			float dist = (length(hit.position - last_position));
 			float a_c = -log(hit.material->m_transparency);
 			float exp = -a_c*dist;
@@ -200,38 +220,38 @@ Spectrum Li(Ray & primary_ray) {
 				}
 			}
 
-			
+
 			TransparencyBlend transparency_blend(a, &transparent, hit.material->m_color);
 			*/
-			
+
 
 
 			float wavelengths[3] = { hit.material->m_RGB_wavelengths.x, hit.material->m_RGB_wavelengths.y, hit.material->m_RGB_wavelengths.z };
 
-/*
-			labhelper::Texture texture = hit.material->m_color_texture;// m_bumpmap_texture;
+			/*
+						labhelper::Texture texture = hit.material->m_color_texture;// m_bumpmap_texture;
 
 
 
-			int _i = round(u * (float)texture.width);
-			int _j = round(v * (float)texture.height);
+						int _i = round(u * (float)texture.width);
+						int _j = round(v * (float)texture.height);
 
 
-			unsigned bytePerPixel = 4;
-			unsigned char* pixelOffset =texture.data  + (_i + texture.height * _j) * bytePerPixel; //static_cast<int>(round(asd * bytePerPixel));
-			unsigned char r = pixelOffset[0];
-			unsigned char g = pixelOffset[1];
-			unsigned char b = pixelOffset[2];
-			//printf("%i, %i, \n", _i, _j);
-			if (bytePerPixel == 4){ // alpha channel
-				unsigned char a = (bytePerPixel >= 4) ? pixelOffset[3] : 0xff;
-            }
-			
-			vec3 coords = vec3(hit.texture_coordinates.x, hit.texture_coordinates.y, 0.f);
-			vec3 textureSample = vec3((float)r/255.f, (float)g / 255.f, (float)b / 255.f);
-			//return Spectrum::FromRGB(textureSample, SpectrumType::Illuminant);
+						unsigned bytePerPixel = 4;
+						unsigned char* pixelOffset =texture.data  + (_i + texture.height * _j) * bytePerPixel; //static_cast<int>(round(asd * bytePerPixel));
+						unsigned char r = pixelOffset[0];
+						unsigned char g = pixelOffset[1];
+						unsigned char b = pixelOffset[2];
+						//printf("%i, %i, \n", _i, _j);
+						if (bytePerPixel == 4){ // alpha channel
+							unsigned char a = (bytePerPixel >= 4) ? pixelOffset[3] : 0xff;
+						}
 
-            */
+						vec3 coords = vec3(hit.texture_coordinates.x, hit.texture_coordinates.y, 0.f);
+						vec3 textureSample = vec3((float)r/255.f, (float)g / 255.f, (float)b / 255.f);
+						//return Spectrum::FromRGB(textureSample, SpectrumType::Illuminant);
+
+						*/
 
 
 
@@ -242,61 +262,67 @@ Spectrum Li(Ray & primary_ray) {
 			LinearBlend reflectivity_blend(hit.material->m_reflectivity, &metal_blend, &diffuse);
 
 			//LinearBlend transparency_blend_final(hit.material->m_transparency, &transparency_blend, &reflectivity_blend);
-			
-			
+
+
 			BRDF & mat = reflectivity_blend;
-			
+
 			// Update last hit position for the next distance calculation
 			last_position = vec3(hit.position);
 
 
 			// Calculate Direct Illumination from light.
-			const float distance_to_light = length(point_light.position - hit.position);
+
+			//Sample random position from Area light
+			vec2 lightPos = vec2(randf(), randf());
+			vec3 * lightWi = new vec3(0.0f);
+			float * lightPdf = new float(0.0f);
+			Intersection * lightHit = new Intersection();
+			Spectrum areaSample = areaLight->Sample_Li(hit, lightHit, lightPos, lightWi, lightPdf);
+
+			const float distance_to_light = length(lightHit->position - hit.position);
+
 			const float falloff_factor = 1.0f / (distance_to_light*distance_to_light);
-			Ray lightRay(hit.position + EPSILON * hit.geometry_normal, normalize(point_light.position - hit.position), 0.0f, distance_to_light);
+			Ray lightRay(hit.position + EPSILON * hit.geometry_normal, normalize(lightHit->position - hit.position), 0.0f, distance_to_light);
 
 			if (!occluded(lightRay)) {
-				vec3 wi = normalize(point_light.position - hit.position);
-				Spectrum lightSpectrum = Spectrum::FromRGB(point_light.color, SpectrumType::Illuminant);
-				Spectrum reflectance = mat.f(wi, hit.wo, hit.shading_normal);
-				//Spectrum yo = mat.f(wi, hit.wo, hit.shading_normal);
-				//float len = length(yo);
-				spectrumSample = spectrumSample + lightSpectrum * reflectance * point_light.intensity_multiplier * falloff_factor * throughput * std::max(0.0f, dot(wi, hit.shading_normal));
+				//vec3 wi = normalize(point_light.position - hit.position);
+				Spectrum reflectance = mat.f(*lightWi, hit.wo, hit.shading_normal);
+				spectrumSample = spectrumSample + areaSample * reflectance * falloff_factor * throughput * std::max(0.0f, dot(*lightWi, hit.shading_normal))*point_light.intensity_multiplier;
 			}
 
 			// Emitted radiance from intersection
 			spectrumSample = spectrumSample + throughput * hit.material->m_emission;
-        
-        // Sample incoming direction
-        vec3 wi;
-        float pdf = 0.0f;
-        Spectrum brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
 
-        if (pdf < EPSILON) {
-            return spectrumSample;
-		}
-			
-		float cosineTerm = abs(dot(wi, hit.shading_normal));
-		throughput = throughput * (brdf * cosineTerm) / pdf;
-				
-		//Break if the throughput is 0
-		if(throughput.IsBlack())
-		{
-			return spectrumSample;
-		}
-			
-		//Next ray
-		if (dot(hit.shading_normal, wi) > 0.0f){
-			current_ray = Ray(hit.position + EPSILON * hit.geometry_normal, wi);
-		}
-		else {
-			current_ray = Ray(hit.position - EPSILON * hit.geometry_normal, wi);
-		}
+			// Sample incoming direction
+			vec3 wi;
+			float pdf = 0.0f;
+			Spectrum brdf = mat.sample_wi(wi, hit.wo, hit.shading_normal, pdf);
 
-		//Intersect the new ray
-		if (!intersect(current_ray)){
-			return spectrumSample + throughput * Lenvironment(current_ray.d);
-		}
+			if (pdf < EPSILON) {
+				return spectrumSample;
+			}
+
+			float cosineTerm = abs(dot(wi, hit.shading_normal));
+			throughput = throughput * (brdf * cosineTerm) / pdf;
+
+			//Break if the throughput is 0
+			if (throughput.IsBlack())
+			{
+				return spectrumSample;
+			}
+
+			//Next ray
+			if (dot(hit.shading_normal, wi) > 0.0f) {
+				current_ray = Ray(hit.position + EPSILON * hit.geometry_normal, wi);
+			}
+			else {
+				current_ray = Ray(hit.position - EPSILON * hit.geometry_normal, wi);
+			}
+
+			//Intersect the new ray
+			if (!intersect(current_ray)) {
+				return spectrumSample + throughput * Lenvironment(current_ray.d);
+			}
 
 		}
 
@@ -310,7 +336,7 @@ Spectrum Li(Ray & primary_ray) {
 
 		///////////////////////////////////////////////////////////////////
 		// Create a Material tree for evaluating brdfs and calculating
-		// sample directions. 
+		// sample directions.
 		///////////////////////////////////////////////////////////////////
 
 
@@ -334,7 +360,7 @@ Spectrum Li(Ray & primary_ray) {
 		if (occluded(lightRay)){
 			return vec3(0.0);
 		}
-		
+
 		///////////////////////////////////////////////////////////////////
 		// Calculate Direct Illumination from light.
 		///////////////////////////////////////////////////////////////////
@@ -349,6 +375,7 @@ Spectrum Li(Ray & primary_ray) {
 		*/
 		return spectrumSample;
 		//return L;
+	
 	}
 
 	float squaredError(vec3 a, vec3 b) {		
@@ -421,7 +448,15 @@ Spectrum Li(Ray & primary_ray) {
 				firstQuadrant = Li(firstQuadrantRay).ToRGB();
 			}
 			else {
-				firstQuadrant = Lenvironment(firstQuadrantRay.d).ToRGB();
+				float * thit = new float();
+				Intersection * lightIntersection = new Intersection();
+				bool hitLight = shape->Intersect(firstQuadrantRay, thit, lightIntersection);
+				if (hitLight) {
+					firstQuadrant = areaLight->getLEmit().ToRGB();
+				}
+				else {
+					firstQuadrant = Lenvironment(firstQuadrantRay.d).ToRGB();
+				}
 			}
 		}
 
@@ -450,8 +485,17 @@ Spectrum Li(Ray & primary_ray) {
 				secondQuadrant = Li(secondQuadrantRay).ToRGB();
 			}
 			else {
-				secondQuadrant = Lenvironment(secondQuadrantRay.d).ToRGB();
+				float * thit = new float();
+				Intersection * lightIntersection = new Intersection();
+				bool hitLight = shape->Intersect(secondQuadrantRay, thit, lightIntersection);
+				if (hitLight) {
+					secondQuadrant = areaLight->getLEmit().ToRGB();
+				}
+				else {
+					secondQuadrant = Lenvironment(secondQuadrantRay.d).ToRGB();
+				}
 			}
+
 		}
 
 		if (length(thirdQp) > EPSILON) {
@@ -479,7 +523,15 @@ Spectrum Li(Ray & primary_ray) {
 				thirdQuadrant = Li(thirdQuadrantRay).ToRGB();
 			}
 			else {
-				thirdQuadrant = Lenvironment(thirdQuadrantRay.d).ToRGB();
+				float * thit = new float();
+				Intersection * lightIntersection = new Intersection();
+				bool hitLight = shape->Intersect(thirdQuadrantRay, thit, lightIntersection);
+				if (hitLight) {
+					thirdQuadrantRay = areaLight->getLEmit().ToRGB();
+				}
+				else {
+					thirdQuadrantRay = Lenvironment(thirdQuadrantRay.d).ToRGB();
+				}
 			}
 		}
 
@@ -508,7 +560,15 @@ Spectrum Li(Ray & primary_ray) {
 				fourthQuadrant = Li(fourthQuadrantRay).ToRGB();
 			}
 			else {
-				fourthQuadrant = Lenvironment(fourthQuadrantRay.d).ToRGB();
+				float * thit = new float();
+				Intersection * lightIntersection = new Intersection();
+				bool hitLight = shape->Intersect(fourthQuadrantRay, thit, lightIntersection);
+				if (hitLight) {
+					fourthQuadrantRay = areaLight->getLEmit().ToRGB();
+				}
+				else {
+					fourthQuadrantRay = Lenvironment(fourthQuadrantRay.d).ToRGB();
+				}
 			}
 		}
 
@@ -613,7 +673,14 @@ Spectrum Li(Ray & primary_ray) {
 						color = Li(primaryRay).ToRGB();
 					}
 					else {
-						color = Lenvironment(primaryRay.d).ToRGB();
+						float * thit = new float();
+						Intersection * lightIntersection = new Intersection();
+						bool hitLight = shape->Intersect(primaryRay, thit, lightIntersection);
+						if (hitLight) {
+							color = areaLight->getLEmit().ToRGB();
+						}else{
+							color = Lenvironment(primaryRay.d).ToRGB();
+						}
 					}
 
 					float n = float(corners_image.number_of_samples);
@@ -664,8 +731,15 @@ Spectrum Li(Ray & primary_ray) {
 						color = Li(primaryRay).ToRGB();
 					}
 					else {
-						// Otherwise evaluate environment
-						color = Lenvironment(primaryRay.d).ToRGB();
+						float * thit = new float();
+						Intersection * lightIntersection = new Intersection();
+						bool hitLight = shape->Intersect(primaryRay, thit, lightIntersection);
+						if (hitLight) {
+							color = areaLight->getLEmit().ToRGB();
+						}
+						else {
+							color = Lenvironment(primaryRay.d).ToRGB();
+						}
 					}
 				}else {
 					vec3 firstQuadrant = corners_image.data[(y+1) * corners_image.width + (x+1)];

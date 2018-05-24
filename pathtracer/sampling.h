@@ -1,3 +1,6 @@
+#ifndef SAMPLING_H
+#define SAMPLING_H
+
 #pragma once
 #include <glm/glm.hpp>
 
@@ -24,3 +27,4 @@ namespace pathtracer
 	///////////////////////////////////////////////////////////////////////////
 	bool sameHemisphere(const glm::vec3 &wi, const glm::vec3 &wo, const glm::vec3 &n);
 }
+#endif /*SAMPLING_H*/

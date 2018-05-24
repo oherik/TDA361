@@ -1,173 +1,276 @@
 #include"Lights.h"
 #include "sampling.h"
 #include <complex>
+#include "Pathtracer.h"
 
 namespace pathtracer
 {
 
-    //Sphere
+	//Sphere
+	float pathtracer::Shape::Pdf(Intersection &ref, vec3 &wi){
+		Ray ray;
+		ray.o = ref.position;
+		ray.d = wi;
+		float tHit;
+		Intersection isectLight;
+		if (!Intersect(ray, &tHit, &isectLight)) {
+			return 0;
+		}
 
-    float Shape::Pdf(const Intersection &ref, const vec3 &wi) const {
-        Ray ray;
-        ray.o = ref.position;
-        ray.d = wi;
-        float tHit;
-        Intersection isectLight;
-        if (!Intersect(ray, &tHit, &isectLight)){
-            return 0;
-        }
-
-        vec3 lightVec = ref.position - isectLight.position;
-        float lengthSquared = lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z;
-        float pdf = lengthSquared  / (abs(dot(isectLight.geometry_normal, -wi)) * area());
-        return pdf;
-    }
-
-    bool Sphere::Intersect(const Ray &ray, float *tHit, Intersection *hit) const{
-        //vec3 oErr, dErr;
-        //transfer ray to object space
-        //TODO
-
-        //Compute quadratic sphere coordinates
-        float a = ray.d.x * ray.d.x + ray.d.y * ray.d.y + ray.d.z + ray.d.z;
-        float b = 2 * (ray.d.x * ray.o.x + ray.d.y * ray.o.y + ray.d.z * ray.o.z);
-        float c = (ray.o.x * ray.o.x + ray.o.y * ray.o.y + ray.o.z * ray.o.z) - (radius * radius);
-
-        float * t0, * t1;
-
-        if(!quadratic(a, b, c, t0, t1)){
-            return false;
-        }
-
-        if(*t0 > ray.tfar || *t1 <= 0){
-            return false;
-        }
-
-        float intersect = *t0;
-        if(intersect <= 0.0f){
-            intersect = *t1;
-            if(intersect > ray.tfar){
-                return false;
-            }
-        }
-
-        //Calculate position of hit and phi
-        vec3 pHit = ray.o + intersect * ray.d;
-        //refine hit to be on sphere.
-        pHit *= radius / sqrt(pHit.x * pHit.x + pHit.y * pHit.z + pHit.z * pHit.z);
-        if(pHit.x == 0 && pHit.y == 0){
-            pHit.x = 1e-5f * radius;
-        }
-
-        float phi = atan2(pHit.y, pHit.x);
-
-        if(phi < 0){
-            phi += 2 * M_PI;
-        }
+		vec3 lightVec = ref.position - isectLight.position;
+		float lengthSquared = lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z;
+		float pdf = lengthSquared / (abs(dot(isectLight.geometry_normal, -wi)) * area());
+		return pdf;
+	}
 
 
-        //Test sphere against clipping
-        if ((zMin > -radius && pHit.z < zMin) ||
-            (zMax < radius && pHit.z > zMax) || phi > phiMax) {
-            if (intersect == *t1){
-                return false;
-            }
-            if (*t1 > ray.tfar) {
-                return false;
-            }
-            intersect = *t1;
-            pHit = ray.o + intersect * ray.d;
-            //refine hit to be on sphere.
-            pHit *= radius / sqrt(pHit.x * pHit.x + pHit.y * pHit.z + pHit.z * pHit.z);
-            if(pHit.x == 0 && pHit.y == 0){
-                pHit.x = 1e-5f * radius;
-            }
+	bool pathtracer::Sphere::Intersect(Ray & _ray, float * tHit, Intersection * hit){
+		//vec3 oErr, dErr;
+		//transfer ray to object space
+		Ray ray;
+		ray.o = (*(this->worldToObject) * vec4(_ray.o, 1));
+		ray.d = normalize(*(this->worldToObject) * vec4(_ray.d, 1));
+		ray.tfar = _ray.tfar;
 
-            float phi = atan2(pHit.y, pHit.x);
+		vec3 d = ray.d;
+		vec3 o = ray.o;
+		float tfar = ray.tfar;
+		//Compute quadratic sphere coordinates
+		float a = d.x * d.x + d.y * d.y + d.z + d.z;
+		float b = 2 * (d.x * o.x + d.y * o.y + d.z * o.z);
+		float c = (o.x * o.x + o.y * o.y + o.z * o.z) - (radius * radius);
 
-            if(phi < 0){
-                phi += 2 * M_PI;
-            }
-            if ((zMin > -radius && pHit.z < zMin) ||
-                (zMax < radius && pHit.z > zMax) || phi > phiMax){
+		float * t0 = new float(0.0f);
+		float * t1 = new float(0.0f);
 
-                return false;
-            }
-        }
+		if (!quadratic(a, b, c, t0, t1)) {
+			return false;
+		}
 
-        //Sphere is hit!! Calculate parametric form u and v
-        float u = phi/phiMax;
-        float theta = acos(clamp(pHit.z / radius, -1.0f, 1.0f));
+		if (*t0 > ray.tfar || *t1 <= 0) {
+			return false;
+		}
 
-        float v = (theta - thetaMin) / (thetaMax - thetaMin);
 
-        //Told to calc derivaties for some reason. I guess that is TODO if usefull
-        
-        hit->uv = vec2(u,v);
-        hit->position = pHit;
-        hit->wo = -ray.d;
-        //assume perfect sphere;
-        hit->geometry_normal = normalize(pHit);
-        *tHit = intersect;
+		float intersect = *t0;
+		if (intersect <= 0.0f) {
+			intersect = *t1;
 
-        return true;
-    }
+			if (intersect > ray.tfar) {
+				return false;
+			}
+		}
 
-    float Sphere::area() const {
-        return phiMax * radius * (zMax - zMin);
-    }
+		//Calculate position of hit and phi
+		vec3 pHit = ray.o + intersect * ray.d;
 
-    Intersection Sphere::Sample(const vec2 &u) const {
-        vec3 pObj = vec3(0) + radius * UniformSampleSphere(u);
-        Intersection it;
-        it.geometry_normal = normalize((*objectToWorld)*(vec4(pObj.x, pObj.y, pObj.z, 1)));
+		//refine hit to be on sphere.
+		pHit *= radius / sqrt(pHit.x * pHit.x + pHit.y * pHit.y + pHit.z * pHit.z);
+		if (pHit.x == 0 && pHit.y == 0) {
+			pHit.x = 1e-5f * radius;
+		}
 
-        pObj *= radius / sqrt(pObj.x * pObj.x + pObj.y * pObj.z + pObj.z * pObj.z);
-        //Line below calculates the error, god knows why.
-        //vec3 pObjError = gamma(5) * abs((Vector3f)pObj);
-        it.position = vec3((*objectToWorld) * (vec4(pObj, 1)));
-        return it;
-    }
+		float phi = atan2(pHit.y, pHit.x);
 
-    vec3 Sphere::UniformSampleSphere(const vec2 &u) const {
-        float z = 1 - 2 * u.x;
-        float r = sqrt(std::max((float)0, (float)1 - z * z));
-        float phi = 2 * M_PI * u[1];
-        return vec3(r * cos(phi), r * sin(phi), z);
-    }
+		if (phi < 0) {
+			phi += 2 * M_PI;
+		}
 
-    
 
-    /* Not sure where this came from but i wrote it but didnt declare it in Lights.h
-    float AreaLight::Pdf(vec3 lightPos, Intersection hit, vec3 n, vec3 wi){
+		//Test sphere against clipping, i don't care about that
+		/*
+		if ((zMin > -radius && pHit.z < zMin) ||
+			(zMax < radius && pHit.z > zMax) || phi > phiMax) {
+			if (intersect == *t1){
+				return false;
+			}
+			if (*t1 > ray.tfar) {
+				return false;
+			}
+			intersect = *t1;
+			pHit = ray.o + intersect * ray.d;
+			//refine hit to be on sphere.
+			pHit *= radius / sqrt(pHit.x * pHit.x + pHit.y * pHit.y + pHit.z * pHit.z);
+			if(pHit.x == 0 && pHit.y == 0){
+				pHit.x = 1e-5f * radius;
+			}
 
-        vec3 lightVec = lightPos - hit.position;
-        float lengthSquared = lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z;
-        float pdf = lengthSquared  / (abs(dot(n, -wi)) * area());
-        return pdf;
-    }
-    */
+			float phi = atan2(pHit.y, pHit.x);
 
+			if(phi < 0){
+				phi += 2 * M_PI;
+			}
+			if ((zMin > -radius && pHit.z < zMin) ||
+				(zMax < radius && pHit.z > zMax) || phi > phiMax){
+
+				return false;
+			}
+		}
+		*/
+
+		//Sphere is hit!! Calculate parametric form u and v
+		float u = phi / phiMax;
+		float theta = acos(clamp(pHit.z / radius, -1.0f, 1.0f));
+
+		float v = (theta - thetaMin) / (thetaMax - thetaMin);
+
+		//Told to calc derivaties for some reason. I guess that is TODO if usefull
+
+		hit->uv = vec2(u, v);
+		hit->position = vec3((*(this->objectToWorld)) * vec4(pHit, 1.0f));
+		hit->wo = vec3(*this->objectToWorld * vec4(-ray.d, 1.0f));
+		//assume perfect sphere;
+		hit->geometry_normal = normalize(vec3(*this->objectToWorld * vec4(pHit, 1.0f)));
+		*tHit = intersect;
+		return true;
+	}
+	float pathtracer::Sphere::area(){
+		return phiMax * radius * (zMax - zMin);
+	}
+
+	Intersection pathtracer::Sphere::Sample(vec2 & u){
+		vec3 pObj = vec3(0) + radius * UniformSampleSphere(u);
+		Intersection it;
+		it.geometry_normal = normalize(*(this->objectToWorld) * (vec4(pObj.x, pObj.y, pObj.z, 1)));
+		pObj *= radius / sqrt(pObj.x * pObj.x + pObj.y * pObj.y + pObj.z * pObj.z);
+
+		//Line below calculates the error, god knows why.
+		//vec3 pObjError = gamma(5) * abs((Vector3f)pObj);
+
+		it.position = vec3(*(this->objectToWorld) * (vec4(pObj, 1)));
+		return it;
+	}
+
+
+	vec3 pathtracer::Sphere::UniformSampleSphere(vec2 & u){
+		float z = 1 - 2 * u.x;
+		float r = sqrt(std::max((float)0, (float)1 - z * z));
+		float phi = 2 * M_PI * u[1];
+		return vec3(r * cos(phi), r * sin(phi), z);
+	}
+
+	//Disc
+
+	bool pathtracer::Disk::Intersect(Ray & _ray, float * tHit, Intersection * hit){
+		//Transform ray to object space
+		Ray ray;
+		ray.o = (*(this->worldToObject) * vec4(_ray.o, 1));
+		ray.d = normalize(*(this->worldToObject) * vec4(_ray.d, 1));
+		ray.tfar = _ray.tfar;
+
+		//Compute plane intersection for disk
+		float tShapeHit = (this->height - ray.o.z) / ray.d.z;
+		if (tShapeHit <= 0.0f /*|| tShapeHit >= ray.tfar*/) {
+			return false;
+		}
+
+		if (ray.d.z == 0) {
+			return false;
+		}
+
+		vec3 pHit = ray.o + ray.d * tShapeHit;
+
+		//See if hit point is inside disk radii and phimax
+		float dist2 = pHit.x * pHit.x + pHit.y * pHit.y;
+		if (dist2 > radius*radius || dist2 < innerRadius * innerRadius) {
+			return false;
+		}
+		//test disc phi value against phimax, i don't care about that. TODO if you want
+
+		//Find parametric representation
+		float phi = std::atan2(pHit.y, pHit.x);
+		float u = phi / phiMax;
+		float rHit = std::sqrt(dist2);
+		float oneMinusV = ((rHit - innerRadius) / (radius - innerRadius));
+		float v = 1 - oneMinusV;
+		/*
+		vec3 dpdu (-phiMax * pHit.y, phiMax * pHit.x, 0);
+		vec3 dpdv = vec3(pHit.x, pHit.y, 0) * (innerRadius - radius) / rHit;
+		vec3 dndu(0, 0, 0), dndv(0, 0, 0);
+		*/
+
+		//Refine disk intersection point
+		pHit *= radius / distance(pHit, vec3(0, 0, 0));
+		//vec3 pError = gamma(5) * abs((vec3)pHit);
+		pHit.z = height;
+		//compute error bounds for disk intersection
+		vec3 pError(0, 0, 0);
+
+		//Init hit
+		hit->uv = vec2(u, v);
+		hit->position = vec3((*(this->objectToWorld)) * vec4(pHit, 1.0f));
+		hit->wo = vec3(*this->objectToWorld * vec4(-ray.d, 1.0f));
+		//assume perfect sphere;
+		hit->geometry_normal = normalize(vec3(*this->objectToWorld * vec4(pHit, 1.0f)));
+		//update tHit
+		*tHit = tShapeHit;
+
+		return true;
+	}
+
+	float pathtracer::Disk::area(){
+		return phiMax * 0.5 * (radius * radius - innerRadius * innerRadius);
+	}
+
+	vec2 pathtracer::Disk::UniformSampleSphere(vec2 & u){
+		float r = std::sqrt(u.x);
+		float theta = 2 * M_PI * u.y;
+		return vec2(r*std::cos(theta), r * std::sin(theta));
+	}
+
+	   
+	Intersection pathtracer::Disk::Sample(vec2 & u){
+		vec2 pd = UniformSampleSphere(u);
+		vec3 pObj(pd.x * radius, pd.y * radius, height);
+		Intersection it;
+		it.geometry_normal = normalize(vec3((*objectToWorld) * vec4(0.0f, 0.0f, 1.0f, 1.0f)));
+		it.position = vec3((*objectToWorld) * vec4(pObj, 1.0f));
+		return Intersection();
+	}
+
+	float pathtracer::AreaLight::pdf(vec3 lightPos, Intersection hit, vec3 n, vec3 wi){
+		vec3 lightVec = lightPos - hit.position;
+		float lengthSquared = lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z;
+		float pdf = lengthSquared / (abs(dot(n, -wi)) * getArea());
+		return pdf;
+	}
+ 
+	float pathtracer::AreaLight::getArea(){
+		return 0.0f;
+	}
+
+	Spectrum pathtracer::AreaLight::getLEmit(){
+		return this->lEmit;
+	}
+	
     //DiffuseAreaLight
-    Spectrum DiffuseAreaLight::L(const vec3 &n, const vec3 &w){ 
-        return dot(n, w) > 0.f ? Lemit : Spectrum();
+    Spectrum DiffuseAreaLight::L(vec3 &n, vec3 &w){ 
+        //return dot(n, w) > 0.f ? lEmit : Spectrum(0.0f);
+		return lEmit;
     } 
 
-    Spectrum DiffuseAreaLight::Sample_Li(const Intersection &ref, const vec2 &u, vec3 *wi, float *pdf) {
-        Intersection pShape = shape->Sample(u);
-        *wi = normalize(pShape.position - ref.position);
-        *pdf = shape->Pdf(ref, *wi);
-        return L(pShape.geometry_normal,  -*wi);
+    Spectrum DiffuseAreaLight::Sample_Li(Intersection &ref, Intersection *lightHit, vec2 &u, vec3 *wi, float *pdf) {
+        *lightHit = shape->Sample(u);
+		*wi = normalize(lightHit->position - ref.position);
+        *pdf = this->shape->Pdf(ref, *wi);
+		Spectrum lEmit = L(lightHit->geometry_normal,  -*wi);
+		return lEmit;
     }
+	
 
-
-    float DiffuseAreaLight::Pdf_Li(const Intersection &ref, const vec3 &wi) {
+    float DiffuseAreaLight::Pdf_Li(Intersection &ref, vec3 &wi) {
         return shape->Pdf(ref, wi);
     }
 
-    Spectrum DiffuseAreaLight::Power() {
-        return Lemit * area * M_PI;
-    }
+	Spectrum pathtracer::DiffuseAreaLight::Power(){
+		return lEmit * this->area * M_PI;
+	}
+
+	float pathtracer::DiffuseAreaLight::getArea(){
+		return this->area;
+	}
+
+	
 
     //Random functions
     bool quadratic(float a, float b, float c, float *t0, float *t1){
@@ -180,10 +283,10 @@ namespace pathtracer
 
         double q;
         if (b < 0) {
-            q = -.5 * (b - rootDiscrim);
+            q = -0.5 * (b - rootDiscrim);
         }
         else{
-            q = -.5 * (b + rootDiscrim);
+            q = -0.5 * (b + rootDiscrim);
         }
         *t0 = q / a;
         *t1 = c / q;
@@ -194,4 +297,11 @@ namespace pathtracer
         }
         return true;
     }
+
+	static constexpr Float MachineEpsilon =
+		std::numeric_limits<Float>::epsilon() * 0.5;
+
+	inline constexpr float gamma(int n) {
+		return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
+	}
 }

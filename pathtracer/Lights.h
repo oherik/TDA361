@@ -1,48 +1,71 @@
+#ifndef LIGHTS_H
+#define LIGHTS_H
 #pragma once
 #include <glm/glm.hpp>
-#include "Pathtracer.h"
 #include "sampling.h"
 #include "spectrum.h"
 #include "embree.h"
 #include <iostream>
 #include <memory>
+#include <algorithm>
+#ifndef M_PI
+#define M_PI 3.14159265359f
+#endif
 
+
+using namespace std;
 using namespace glm; 
 
 namespace pathtracer{
 
     class Shape{
         public:
-            Shape(const mat4 *worldToObject, const mat4 *objectToWorld);
-            virtual bool Intersect(const Ray &ray, float *tHit, Intersection *hit) const = 0;
-            virtual float area() const = 0;
-            virtual Intersection Sample(const vec2 &u) const = 0;
-            virtual vec3 UniformSampleSphere(const vec2 &u) const = 0;
-            virtual float Pdf(const Intersection &ref, const vec3 &wi) const = 0;
-            const mat4 *worldToObject, *objectToWorld;
+			Shape(mat4 *_worldToObject, mat4 *_objectToWorld)
+				: worldToObject(_worldToObject), objectToWorld(_objectToWorld) {};
+            virtual bool Intersect(Ray &ray, float *tHit, Intersection *hit) = 0;
+            virtual float area() = 0;
+            virtual Intersection Sample( vec2 &u) = 0;
+            //virtual vec3 UniformSampleSphere( vec2 &u);
+            float Pdf( Intersection &ref,  vec3 &wi);
+            mat4 *worldToObject, *objectToWorld;
     };
 
     class Sphere : public Shape {
         private:
-            const float radius, zMin, zMax;
-            const float thetaMin, thetaMax, phiMax;
+             float radius, zMin, zMax;
+             float thetaMin, thetaMax, phiMax;
         public:
-            Sphere(const mat4 *_objectToWorld, const mat4 *_worldToObject, float _radius, float _zMin, float _zMax, float _phiMax) : 
-                Shape(objectToWorld, worldToObject),
+            Sphere(mat4 *_objectToWorld, mat4 *_worldToObject, float _radius, float _zMin, float _zMax, float _phiMax) : 
+                Shape(_objectToWorld, _worldToObject),
                 radius(_radius), 
-                zMin(clamp(min(_zMin,_zMax), -radius, radius)), 
-                zMax(clamp(max(_zMin, _zMax), -radius, radius)),
+                zMin(clamp(std::min(_zMin,_zMax), -radius, radius)), 
+                zMax(clamp(std::max(_zMin, _zMax), -radius, radius)),
                 thetaMin(acos(clamp(zMin / radius, -1.0f, 1.0f))),
                 thetaMax(acos(clamp(zMax / radius, -1.0f, 1.0f))),
                 phiMax(radians(clamp(_phiMax, 0.0f, 360.0f))) {}
 
-            virtual bool Intersect(const Ray &ray, float *tHit, Intersection *hit) const override;
-            virtual float area() const override;
-            virtual Intersection Sample(const vec2 &u) const override;
-            virtual vec3 UniformSampleSphere(const vec2 &u) const override;
-    };
-
-
+            bool Intersect( Ray &_ray, float *tHit, Intersection *hit)  override;
+            float area() override;
+            Intersection Sample( vec2 &u)  override;
+            vec3 UniformSampleSphere( vec2 &u);
+			//float Pdf( Intersection &ref,  vec3 &wi)  override;
+	};
+	
+	class Disk : public Shape {
+	public:
+		Disk(mat4 *_objectToWorld, mat4 *_worldToObject,
+			float _height, float _radius, float _innerRadius, float _phiMax) :
+			Shape(_objectToWorld, _worldToObject),
+			height(_height), radius(_radius), innerRadius(_innerRadius), phiMax(M_PI / 180 * (Clamp(_phiMax, 0, 360))) {}
+		bool Intersect( Ray &_ray, float * tHit, Intersection * hit) override;
+		float area()  override;
+		vec2 UniformSampleSphere( vec2 &u);
+		Intersection Sample( vec2 &u) override;
+		//float Pdf( Intersection &ref,  vec3 &wi)  override;
+	private:
+		 float height, radius, innerRadius, phiMax;
+	};
+	
     
     enum class LightFlags : int {
             DeltaPosition = 1, DeltaDirection = 2, Area = 4, Infinite = 8
@@ -50,49 +73,49 @@ namespace pathtracer{
         
 	class Light{
         public: 
-            Light();
-            Light(int flags, const mat4 &LightToWorld, int nSamples = 1)
-            : flags(flags), nSamples(max(1, nSamples)), LightToWorld(LightToWorld),
-            WorldToLight(inverse(LightToWorld)) {
+            Light(int flags, mat4 * _LightToWorld, int nSamples = 1)
+            : flags(flags), nSamples(std::max(1, nSamples)), LightToWorld(*_LightToWorld),
+            WorldToLight(inverse(*_LightToWorld)) {
             };
-            const int flags;
-            const int nSamples;
-            virtual Spectrum Sample_Li(const Intersection &ref, const vec2 &u, vec3 *wi, float *pdf) {};
-            virtual Spectrum Power() const = 0;
+            int flags;
+            int nSamples;
+            virtual Spectrum Sample_Li( Intersection &ref, Intersection *lightHit,  vec2 &u, vec3 *wi, float *pdf) = 0;
+            virtual Spectrum Power() = 0;
 
         protected:
-            const mat4 LightToWorld, WorldToLight;
+             mat4 LightToWorld, WorldToLight;
     };
 
 
     class AreaLight : public Light {
         public:
-            AreaLight();
-            AreaLight(mat4 LightToWorld, int nSamples = 1)
-                : Light(4, LightToWorld, nSamples){};
-            virtual Spectrum L(const vec3 &coordinate, const vec3 &w) {}; 
-            virtual float area() const {};
+			Spectrum lEmit;
+            AreaLight(mat4 * LightToWorld, Spectrum _lEmit, int nSamples = 1)
+                : Light(4, LightToWorld, nSamples), lEmit(_lEmit){};
+            virtual Spectrum L( vec3 &coordinate,  vec3 &w) = 0; 
             float pdf(vec3 lightPos, Intersection hit, vec3 n, vec3 wi);
+			virtual float getArea() = 0;
+			Spectrum getLEmit();
     };
 
 
     class DiffuseAreaLight : public AreaLight {
         public:
-            DiffuseAreaLight();
-            const Spectrum Lemit;
-            const float area;
-            const Shape * shape;
-            DiffuseAreaLight(const mat4 &LightToWorld,
-            const Spectrum &Lemit,
-            int nSamples, const Shape *shape)
-            : AreaLight(LightToWorld, nSamples), Lemit(Lemit),
+            float area;
+            Shape * shape;
+            DiffuseAreaLight(mat4 * LightToWorld, Spectrum _lEmit, int nSamples, Shape *shape)
+            : AreaLight(LightToWorld, _lEmit, nSamples),
             shape(shape), area(shape->area()) {};
      
-            float Pdf_Li(const Intersection &ref, const vec3 &wi);
-            Spectrum L(const vec3 &n, const vec3 &w) override;
-            Spectrum Sample_Li(const Intersection &ref, const vec2 &u, vec3 *wi, float *pdf) override;
-            Spectrum Power();
-    };
-
-    bool quadratic(float a, float b, float c, float *t0, float *t1);
+            float Pdf_Li( Intersection &ref,  vec3 &wi);
+            Spectrum L( vec3 &n,  vec3 &w) override;
+            Spectrum Sample_Li( Intersection &ref, Intersection *lightHit,  vec2 &u, vec3 *wi, float *pdf) override;
+            Spectrum Power() override;
+			float getArea() override;
+	};
+	
+	bool quadratic(float a, float b, float c, float *t0, float *t1);
+	inline constexpr float gamma(int n);
 };
+
+#endif /*LIGHTS_H*/
