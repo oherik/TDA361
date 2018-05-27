@@ -166,6 +166,15 @@ namespace pathtracer
 		return f(wi, wo, n);
 	}
 
+	float pathtracer::Diffuse::PDF(vec3 wi, vec3 n, vec3 wo){
+		if (dot(wi, n) <= 0.0f) {
+			return 0.0f;
+		}
+		else {
+			return std::max(0.0f, dot(n, wi)) / M_PI;
+		}
+	}
+
 	///////////////////////////////////////////////////////////////////////////
 	// Refract yo
 	///////////////////////////////////////////////////////////////////////////
@@ -210,6 +219,10 @@ namespace pathtracer
 			float cosineTerm = abs(dot(wi, n)); // För att bli av med den i senare uträkning och slippa mörk rand
 			return Spectrum::FromRGB(vec3(1.0) / cosineTerm, SpectrumType::Reflectance);
 		}
+	}
+
+	float pathtracer::Transparent::PDF(vec3 wi, vec3 n, vec3 wo){
+		return 1.0f;
 	}
 
 	///////////////////////////////////////////////////////////////////////////
@@ -302,6 +315,34 @@ namespace pathtracer
 		*/
 		
 	}
+
+	float pathtracer::CustomDefined::PDF(vec3 wi, vec3 n, vec3 wo){
+		vec3 tangent = normalize(perpendicular(n));
+		vec3 bitangent = normalize(cross(tangent, n));
+		float phi = 2.0f * M_PI * randf();
+		float cos_theta = pow(randf(), 1.0f / (shininess + 1.0f));
+		float sin_theta = sqrt(std::max(0.0f, 1.0f - cos_theta * cos_theta));
+		vec3 wh = normalize(sin_theta * cos(phi) * tangent +
+			sin_theta * sin(phi) * bitangent +
+			cos_theta * n);
+
+		return PDF(wi, n, wo, randf(), wh);
+
+		return 0.0f;
+	}
+
+	float pathtracer::CustomDefined::PDF(vec3 wi, vec3 n, vec3 wo,
+		float rand, vec3 wh) {
+		if (rand < 0.5) {
+			float p_wh = (shininess + 1.0f)*(pow(dot(n, wh), shininess)) / (2.0f * M_PI);
+			float den = 4.0f * dot(wo, wh);
+			if (den < EPSILON) {
+				return p_wh;
+			}
+			return p_wh / den;
+		}
+	}
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// A Blinn Phong Metal Microfacet BRFD (extends the BlinnPhong class
@@ -407,6 +448,20 @@ namespace pathtracer
 		}
 	}
 
+	float pathtracer::TransparencyBlend::PDF(vec3 wi, vec3 n, vec3 wo, float rand) {
+		if (rand < a) {
+			return transparency->PDF(wi, n, wo) * a;
+		}
+		else {
+			return transparency->PDF(wi, n, wo) * (1 - a);
+		}
+	}
+
+
+	float pathtracer::TransparencyBlend::PDF(vec3 wi, vec3 n, vec3 wo){
+		return PDF(wi, n, wo, randf());
+	}
+
 	///////////////////////////////////////////////////////////////////////////
 	// A Linear Blend between two BRDFs
 	///////////////////////////////////////////////////////////////////////////
@@ -427,6 +482,19 @@ namespace pathtracer
 			p = p * (1- w);
 			return brdf;
 		}
+	}
+
+	float pathtracer::LinearBlend::PDF(vec3 wi, vec3 n, vec3 wo, float rand) {
+		if (rand < w) {
+			return bsdf0->PDF(wi, n, wo) * w;
+		}
+		else {
+			return bsdf1->PDF(wi, n, wo) * (1 - w);
+		}
+	}
+
+	float pathtracer::LinearBlend::PDF(vec3 wi, vec3 n, vec3 wo) {
+		return PDF(wi, n, wo, randf());
 	}
 
 	///////////////////////////////////////////////////////////////////////////

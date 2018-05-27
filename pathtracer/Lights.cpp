@@ -25,103 +25,67 @@ namespace pathtracer
 
 
 	bool pathtracer::Sphere::Intersect(Ray & _ray, float * tHit, Intersection * hit){
-		//vec3 oErr, dErr;
-		//transfer ray to object space
-		Ray ray;
-		ray.o = (*(this->worldToObject) * vec4(_ray.o, 1));
-		ray.d = normalize(*(this->worldToObject) * vec4(_ray.d, 1));
-		ray.tfar = _ray.tfar;
+		float phi;
+		vec3 pHit;
+
+		//transform ray into objectspace
+
+		Ray ray((*(this->worldToObject) * vec4(_ray.o, 1)), normalize(*(this->worldToObject) * vec4(_ray.d, 1)), 0.0f, _ray.tfar);
+		
+		//Compute quadric sphere coordinates
 
 		vec3 d = ray.d;
 		vec3 o = ray.o;
-		float tfar = ray.tfar;
-		//Compute quadratic sphere coordinates
-		float a = d.x * d.x + d.y * d.y + d.z + d.z;
+
+		float a = d.x * d.x + d.y * d.y + d.z * d.z;
 		float b = 2 * (d.x * o.x + d.y * o.y + d.z * o.z);
-		float c = (o.x * o.x + o.y * o.y + o.z * o.z) - (radius * radius);
+		float c = o.x * o.x + o.y * o.y + o.z * o.z - radius * radius;
 
-		float * t0 = new float(0.0f);
-		float * t1 = new float(0.0f);
-
-		if (!quadratic(a, b, c, t0, t1)) {
+		//solve quadratic for t values
+		float t0, t1;
+		if (!quadratic(a, b, c, &t0, &t1)) {
 			return false;
 		}
 
-		if (*t0 > ray.tfar || *t1 <= 0) {
+		if (t1 <= 0) {
 			return false;
 		}
+		float tShapeHit = t0;
 
-
-		float intersect = *t0;
-		if (intersect <= 0.0f) {
-			intersect = *t1;
-
-			if (intersect > ray.tfar) {
-				return false;
-			}
+		if (tShapeHit <= 0) {
+			tShapeHit = t1;
 		}
 
-		//Calculate position of hit and phi
-		vec3 pHit = ray.o + intersect * ray.d;
+		//Compute sphere hit pos and phi
+		pHit = ray.o + ray.d * tShapeHit;
+		
+		//Refine sphere intersection point
+		pHit *= radius / distance(pHit, vec3(0, 0, 0));
 
-		//refine hit to be on sphere.
-		pHit *= radius / sqrt(pHit.x * pHit.x + pHit.y * pHit.y + pHit.z * pHit.z);
 		if (pHit.x == 0 && pHit.y == 0) {
 			pHit.x = 1e-5f * radius;
 		}
-
-		float phi = atan2(pHit.y, pHit.x);
-
+		phi = std::atan2(pHit.y, pHit.x);
 		if (phi < 0) {
 			phi += 2 * M_PI;
 		}
 
 
-		//Test sphere against clipping, i don't care about that
-		/*
-		if ((zMin > -radius && pHit.z < zMin) ||
-			(zMax < radius && pHit.z > zMax) || phi > phiMax) {
-			if (intersect == *t1){
-				return false;
-			}
-			if (*t1 > ray.tfar) {
-				return false;
-			}
-			intersect = *t1;
-			pHit = ray.o + intersect * ray.d;
-			//refine hit to be on sphere.
-			pHit *= radius / sqrt(pHit.x * pHit.x + pHit.y * pHit.y + pHit.z * pHit.z);
-			if(pHit.x == 0 && pHit.y == 0){
-				pHit.x = 1e-5f * radius;
-			}
-
-			float phi = atan2(pHit.y, pHit.x);
-
-			if(phi < 0){
-				phi += 2 * M_PI;
-			}
-			if ((zMin > -radius && pHit.z < zMin) ||
-				(zMax < radius && pHit.z > zMax) || phi > phiMax){
-
-				return false;
-			}
-		}
-		*/
-
-		//Sphere is hit!! Calculate parametric form u and v
+		//Find parametric representation of sphere hit
 		float u = phi / phiMax;
-		float theta = acos(clamp(pHit.z / radius, -1.0f, 1.0f));
-
+		float theta = std::acos(Clamp(pHit.z / radius, -1, 1));
 		float v = (theta - thetaMin) / (thetaMax - thetaMin);
 
-		//Told to calc derivaties for some reason. I guess that is TODO if usefull
-
+		//initialize intersection from parametric information
+		//Init hit
 		hit->uv = vec2(u, v);
 		hit->position = vec3((*(this->objectToWorld)) * vec4(pHit, 1.0f));
 		hit->wo = vec3(*this->objectToWorld * vec4(-ray.d, 1.0f));
 		//assume perfect sphere;
 		hit->geometry_normal = normalize(vec3(*this->objectToWorld * vec4(pHit, 1.0f)));
-		*tHit = intersect;
+		//update tHit
+		*tHit = tShapeHit;		//update tHit for quadric intersection
+
 		return true;
 	}
 	float pathtracer::Sphere::area(){
@@ -274,28 +238,17 @@ namespace pathtracer
 
     //Random functions
     bool quadratic(float a, float b, float c, float *t0, float *t1){
-        double discrim = (double)b * (double)b - 4 * (double)a * (double)c;
-        if (discrim < 0) {
-            return false;
-        }
+		double discrim = (double)b * (double)b - 4 * (double)a * (double)c;
+		if (discrim < 0) return false;
+		double rootDiscrim = std::sqrt(discrim);
 
-        double rootDiscrim = sqrt(discrim);
-
-        double q;
-        if (b < 0) {
-            q = -0.5 * (b - rootDiscrim);
-        }
-        else{
-            q = -0.5 * (b + rootDiscrim);
-        }
-        *t0 = q / a;
-        *t1 = c / q;
-        if (*t0 > *t1) {
-            float * tmp = t0;
-            t0 = t1;
-            t1 = tmp;
-        }
-        return true;
+		double q;
+		if (b < 0) q = -.5 * (b - rootDiscrim);
+		else q = -.5 * (b + rootDiscrim);
+		*t0 = q / a;
+		*t1 = c / q;
+		if (*t0 > *t1) std::swap(*t0, *t1);
+		return true;
     }
 
 	static constexpr Float MachineEpsilon =
@@ -304,4 +257,5 @@ namespace pathtracer
 	inline constexpr float gamma(int n) {
 		return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
 	}
+
 }

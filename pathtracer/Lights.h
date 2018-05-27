@@ -81,6 +81,9 @@ namespace pathtracer{
             int nSamples;
             virtual Spectrum Sample_Li( Intersection &ref, Intersection *lightHit,  vec2 &u, vec3 *wi, float *pdf) = 0;
             virtual Spectrum Power() = 0;
+			Spectrum Le(const Ray &ray) const {
+				return Spectrum(0.f);
+			}
 
         protected:
              mat4 LightToWorld, WorldToLight;
@@ -116,6 +119,107 @@ namespace pathtracer{
 	
 	bool quadratic(float a, float b, float c, float *t0, float *t1);
 	inline constexpr float gamma(int n);
+
+	inline float BitsToFloat(uint32_t ui) {
+		float f;
+		memcpy(&f, &ui, sizeof(uint32_t));
+		return f;
+	}
+
+	inline uint32_t FloatToBits(float f) {
+		uint32_t ui;
+		memcpy(&ui, &f, sizeof(float));
+		return ui;
+	}
+
+	inline float NextFloatUp(float v) {
+		if (std::isinf(v) && v > 0.) {
+			return v;
+		}
+		if (v == -0.f) {
+			v = 0.f;
+		}
+
+		uint32_t ui = FloatToBits(v);
+		if (v >= 0) ++ui;
+		else --ui;
+		return BitsToFloat(ui);
+
+	}
+	
+	inline float NextFloatDown(float v) {
+		if (std::isinf(v) && v > 0.) {
+			return v;
+		}
+		if (v == 0.f) {
+			v = -0.f;
+		}
+		
+		uint32_t ui = FloatToBits(v);
+		if (v >= 0) { --ui; }
+		else { ++ui; }
+		return BitsToFloat(ui);
+	}
+
+	class EFloat {
+	public:
+		EFloat() { }
+		EFloat(float v, float err = 0.f) : v(v), err(err) {
+		#ifndef NDEBUG
+		ld = v;
+		#endif // NDEBUG
+		}
+		float v;
+		float err;
+		#ifndef NDEBUG
+		long double ld;
+		#endif // NDEBUG
+		
+		EFloat operator+(EFloat f) {
+			EFloat r;
+			r.v = v + f.v;
+			#ifndef NDEBUG
+			r.ld = ld + f.ld;
+			#endif // DEBUG
+			r.err = err + f.err +
+				gamma(1) * (std::abs(v + f.v) + err + f.err);
+			return r;
+		}
+
+		EFloat operator-(EFloat f) {
+			EFloat r;
+			r.v = v - f.v;
+			#ifndef NDEBUG
+			r.ld = ld - f.ld;
+			#endif // DEBUG
+			r.err = err +	 f.err +
+				gamma(1) * (std::abs(v + f.v) + err + f.err);
+			return r;
+		}
+
+		EFloat operator*(EFloat f) {
+			EFloat r;
+			r.v = v - f.v;
+			#ifndef NDEBUG
+			r.ld = ld - f.ld;
+			#endif // DEBUG
+			r.err = err * f.err +
+				gamma(1) * (std::abs(v + f.v) + err + f.err);
+			return r;
+		}
+
+
+		float GetAbsoluteError() const { return err; }
+		float UpperBound() const { return NextFloatUp(v + err); }
+		float LowerBound() const { return NextFloatDown(v - err); }
+		explicit operator float() const { return v; }
+
+	};
+
+	
 };
+
+
+
 
 #endif /*LIGHTS_H*/

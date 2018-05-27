@@ -15,6 +15,11 @@
 #include "material.h"
 #include "Lights.h"
 
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
+
+
 using namespace glm;
 using namespace std; 
 
@@ -96,20 +101,21 @@ void initialize()
 	// Set up arealight
 	///////////////////////////////////////////////////////////////////////////
 	//Initialize position and transformation matrixes
-	vec3 * aLightPos = new vec3(0.0f, 0.0f, 0.0f);
+	vec3 * aLightPos = new vec3(10.0f, 10.0f, 10.0f);
 	mat4 * lightToWorld = new mat4(1.0f);
 	*lightToWorld += translate(*aLightPos);
 	mat4 * worldToLight = new mat4(1.0f);
 	*worldToLight = inverse(*lightToWorld);
 	
 	//Create shape and arealight
-	pathtracer::shape = new pathtracer::Disk(lightToWorld, worldToLight, 0.0f, 20.0f, 0.0f, 360.0f);
+	//pathtracer::shape = new pathtracer::Disk(lightToWorld, worldToLight, 0.0f, 20.0f, 0.0f, 360.0f);
+	pathtracer::shape = new pathtracer::Sphere(lightToWorld, worldToLight, 5.0f, -5.0f, 5.0f, 360.0f);
 	pathtracer::areaLight = new pathtracer::DiffuseAreaLight(lightToWorld, Spectrum(1.0f), 1, pathtracer::shape);
 
 	///////////////////////////////////////////////////////////////////////////
 	// Set up depth of field
 	///////////////////////////////////////////////////////////////////////////
-	pathtracer::depthOfField.lensRadius = 0.25f; // 0 = disable
+	pathtracer::depthOfField.lensRadius = 0.0f; // 0 = disable
 	pathtracer::depthOfField.focusDistance = 10;
 
 	///////////////////////////////////////////////////////////////////////////
@@ -122,10 +128,10 @@ void initialize()
 	// Load .obj models to scene
 	///////////////////////////////////////////////////////////////////////////
 
-	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, -10.0f, -10.0f))));
-	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, -10.0f))));
-	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), mat4(1.0f)));
-	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/cornell.obj"), scale(mat4(1.0f), vec3(1.f))));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, -20.0f, 0.0f))));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, 10.0f))));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), translate(vec3(0.0f, -40.0f, 0.0f))));
+	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/cornell.obj"), scale(mat4(1.0f), vec3(1.f))));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/bigsphere.obj"), scale(mat4(1.0f), vec3(0.05f))));
 
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/water.obj"), scale(mat4(1.0f),vec3(0.02f))));
@@ -517,5 +523,6 @@ int main(int argc, char *argv[])
 	}
 	// Shut down everything. This includes the window and all other subsystems.
 	labhelper::shutDown(g_window);
+	_CrtDumpMemoryLeaks();
 	return 0;          
 }

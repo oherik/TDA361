@@ -14,8 +14,15 @@
 using namespace std; 
 using namespace glm; 
 
+
+
 namespace pathtracer
 { 
+
+	Spectrum EstimateDirect(Intersection &it,
+		vec2 &uScattering, Light &light,
+		vec2 &uLight, BRDF &mat, bool isSurfaceHit, bool handleMedia, bool specular); 
+
 	///////////////////////////////////////////////////////////////////////////////
 	// Global variables
 	///////////////////////////////////////////////////////////////////////////////
@@ -274,21 +281,29 @@ Spectrum Li(Ray & primary_ray) {
 
 			//Sample random position from Area light
 			vec2 lightPos = vec2(randf(), randf());
+
+			spectrumSample += EstimateDirect(hit, vec2(randf(), randf()), *areaLight, lightPos, mat, true, false, false);
+
+			/*
 			vec3 * lightWi = new vec3(0.0f);
 			float * lightPdf = new float(0.0f);
 			Intersection * lightHit = new Intersection();
 			Spectrum areaSample = areaLight->Sample_Li(hit, lightHit, lightPos, lightWi, lightPdf);
+			
 
 			const float distance_to_light = length(lightHit->position - hit.position);
 
 			const float falloff_factor = 1.0f / (distance_to_light*distance_to_light);
 			Ray lightRay(hit.position + EPSILON * hit.geometry_normal, normalize(lightHit->position - hit.position), 0.0f, distance_to_light);
+			
 
 			if (!occluded(lightRay)) {
 				//vec3 wi = normalize(point_light.position - hit.position);
 				Spectrum reflectance = mat.f(*lightWi, hit.wo, hit.shading_normal);
 				spectrumSample = spectrumSample + areaSample * reflectance * falloff_factor * throughput * std::max(0.0f, dot(*lightWi, hit.shading_normal))*point_light.intensity_multiplier;
 			}
+
+			*/
 
 			// Emitted radiance from intersection
 			spectrumSample = spectrumSample + throughput * hit.material->m_emission;
@@ -771,5 +786,106 @@ Spectrum Li(Ray & primary_ray) {
 		rendered_image.number_of_samples += 1;
 	}
 
+	Spectrum EstimateDirect(Intersection &it,
+		vec2 &uScattering, Light &light,
+		vec2 &uLight, BRDF &mat, bool isSurfaceHit, bool handleMedia, bool specular) {
+		
+		Spectrum Ld(0.f);
+		//Sample light source with multiple importance sampling 858
+		vec3 wi;
+		Intersection * lightHit = new Intersection();
+		float lightPdf = 0, scatteringPdf = 0;
+		Spectrum Li = light.Sample_Li(it, lightHit, uLight, &wi, &lightPdf);
+
+		if (lightPdf > 0 && !Li.IsBlack()) {
+			//Compute BSDF value for light sample 859
+			Spectrum f;
+			
+			Intersection &isect = (Intersection &) it;
+			f = mat.f(wi, isect.wo, isect.shading_normal) * dot(wi, isect.shading_normal);
+			scatteringPdf = mat.PDF(wi, it.shading_normal, it.wo);
+			
+
+			if (!f.IsBlack()) {
+
+				//Compute effect of visibility for light source sample 859
+
+				const float distance_to_light = length(lightHit->position - isect.position);
+				const float falloff_factor = 1.0f / (distance_to_light*distance_to_light);
+				Ray lightRay(isect.position + EPSILON * isect.geometry_normal, normalize(lightHit->position - isect.position), 0.0f, distance_to_light);
+
+				if (!occluded(lightRay)) {
+					//vec3 wi = normalize(point_light.position - hit.position);
+					Li  = Li * f * falloff_factor * std::max(0.0f, dot(wi, isect.shading_normal))*point_light.intensity_multiplier;
+				}
+				else {
+					Li = Spectrum(0.0f);
+				}
+				//Add light’s contribution to reflected radiance 860
+				if (!Li.IsBlack()) {
+				
+					float f = 1 * lightPdf, g = 1 * scatteringPdf;
+					float weight = (f * f) / (f * f + g * g);
+					Ld += f * Li * weight / lightPdf;
+				
+				}
+			}
+		}
+
+		//Sample BSDF with multiple importance sampling 860
+		Spectrum f;
+		bool sampledSpecular = false;
+		//Sample scattered direction for surface interactions 860
+		const Intersection &isect = (const Intersection &)it;
+		f = mat.sample_wi(wi, isect.wo, isect.shading_normal, scatteringPdf);
+		f *= abs(dot(wi, isect.shading_normal));
+		//sampledSpecular = sampledType & BSDF_SPECULAR;
+		
+		if (!f.IsBlack() && scatteringPdf > 0) {
+			//Account for light contributions along sampled direction wi 861
+			float weight = 1;
+			
+			/*dont think we use this?
+			if (!sampledSpecular) {
+				lightPdf = light.Pdf_Li(it, wi);
+				if (lightPdf == 0)
+					return Ld;
+				weight = PowerHeuristic(1, scatteringPdf, 1, lightPdf);
+			}
+			*/
+
+			//Find intersection and compute transmittance 861
+			Intersection lightIsect;
+			Ray ray;
+			if (dot(it.shading_normal, wi) > 0.0f) {
+				ray = Ray(it.position + EPSILON * it.geometry_normal, wi);
+			}
+			else {
+				ray = Ray(it.position - EPSILON * it.geometry_normal, wi);
+			}
+
+			Spectrum Tr(1.f);
+			float * tHit = new float();
+			bool lightIntersect = shape->Intersect(ray, tHit, &it);
+			if (lightIntersect) {
+				ray.tfar = *tHit;
+				lightIntersect = !occluded(ray);
+			}
+			//Add light contribution from material sampling 861
+			Spectrum Li(0.f);
+			if (lightIntersect) {
+				Li = light.Le(-wi);
+			}
+			else {
+				Li = light.Le(ray);
+			}
+			if (!Li.IsBlack())
+				Ld += f * Li * Tr * weight / scatteringPdf;
+		}
+
+		return Ld;
+	}
 };
+
+
 

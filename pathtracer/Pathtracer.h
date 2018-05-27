@@ -86,6 +86,9 @@ namespace pathtracer
 	// Trace one path per pixel
 	///////////////////////////////////////////////////////////////////////////
 	void tracePaths(vec3 camera_pos, vec3 camera_dir, vec3 camera_up);
+
+	
+	
 };
 
 #endif /*PATHTRACER_H*/

@@ -41,6 +41,7 @@ namespace pathtracer
 		// Sample a suitable direction and return the brdf in that direction as
 		// well as the pdf (~probability) that the direction was chosen. 
 		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) = 0;
+		virtual float PDF(vec3 wi, vec3 n, vec3 wo) = 0;
 	};
 
 
@@ -54,6 +55,7 @@ namespace pathtracer
 			transparency(_transparency), color(_color) {}
 		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
 		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+		float PDF(vec3 wi, vec3 n, vec3 wo) override;
 	};
 
 	///////////////////////////////////////////////////////////////////////////
@@ -66,6 +68,7 @@ namespace pathtracer
 		Diffuse(vec3 c) : color(c) {}
 		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
 		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+		float PDF(vec3 wi, vec3 n, vec3 wo) override;
 	};
 
 	///////////////////////////////////////////////////////////////////////////
@@ -83,6 +86,8 @@ namespace pathtracer
 		virtual Spectrum reflection_brdf(const vec3 & wi, const vec3 & wo, const vec3 & n);
 		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
 		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+		float PDF(vec3 wi, vec3 n, vec3 wo) override;
+		float PDF(vec3 wi, vec3 n, vec3 wo, float rand, vec3 wh);
 	};
 
 	///////////////////////////////////////////////////////////////////////////
@@ -110,6 +115,8 @@ namespace pathtracer
 		LinearBlend(float _w, BRDF * a, BRDF * b) : w(_w), bsdf0(a), bsdf1(b) {};
 		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
 		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+		float PDF(vec3 wi, vec3 n, vec3 wo) override;
+		float PDF(vec3 wi, vec3 n, vec3 wo, float rand);
 	};
 
 
@@ -126,6 +133,8 @@ namespace pathtracer
 		TransparencyBlend(float _a, BRDF * _transparency, vec3 _color) : a(_a), transparency(_transparency), color(_color) {};
 		virtual Spectrum f(const vec3 & wi, const vec3 & wo, const vec3 & n) override;
 		virtual Spectrum sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) override;
+		float PDF(vec3 wi, vec3 n, vec3 wo) override;
+		float PDF(vec3 wi, vec3 n, vec3 wo, float rand);
 	};
 
 	
