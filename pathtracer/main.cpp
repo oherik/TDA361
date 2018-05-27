@@ -131,7 +131,7 @@ void initialize()
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, -20.0f, 0.0f))));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, 10.0f))));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), translate(vec3(0.0f, -40.0f, 0.0f))));
-	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/cornell.obj"), scale(mat4(1.0f), vec3(1.f))));
+	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/cornellbottle.obj"), scale(mat4(1.0f), vec3(1.f))));
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/bigsphere.obj"), scale(mat4(1.0f), vec3(0.05f))));
 
 	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/water.obj"), scale(mat4(1.0f),vec3(0.02f))));

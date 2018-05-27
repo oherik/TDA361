@@ -118,9 +118,9 @@ Spectrum Li(Ray & primary_ray) {
 	//Task 5: bounce it up
 	for (int i = 0; i < settings.max_bounces; i++) {
 
-		float * thit = new float();
-		Intersection * lightIntersection = new Intersection();
-		bool hitLight = shape->Intersect(current_ray, thit, lightIntersection);
+		float thit;
+		Intersection lightIntersection;
+		bool hitLight = shape->Intersect(current_ray, &thit, &lightIntersection);
 
 		// Get the intersection information from the ray
 		Intersection hit = getIntersection(current_ray);
@@ -128,7 +128,7 @@ Spectrum Li(Ray & primary_ray) {
 		//if light is in the path of the ray check which one is closer
 		if (hitLight) {
 			//If the ray hit light first return light.
-			float lightray = distance(current_ray.o, lightIntersection->position);
+			float lightray = distance(current_ray.o, lightIntersection.position);
 			float hitray = distance(current_ray.o, hit.position);
 			float lightHitDistance = lightray - hitray;
 			if (lightHitDistance <= 0.0f) {
@@ -463,9 +463,9 @@ Spectrum Li(Ray & primary_ray) {
 				firstQuadrant = Li(firstQuadrantRay).ToRGB();
 			}
 			else {
-				float * thit = new float();
-				Intersection * lightIntersection = new Intersection();
-				bool hitLight = shape->Intersect(firstQuadrantRay, thit, lightIntersection);
+				float thit;
+				Intersection lightIntersection;
+				bool hitLight = shape->Intersect(firstQuadrantRay, &thit, &lightIntersection);
 				if (hitLight) {
 					firstQuadrant = areaLight->getLEmit().ToRGB();
 				}
@@ -500,9 +500,9 @@ Spectrum Li(Ray & primary_ray) {
 				secondQuadrant = Li(secondQuadrantRay).ToRGB();
 			}
 			else {
-				float * thit = new float();
-				Intersection * lightIntersection = new Intersection();
-				bool hitLight = shape->Intersect(secondQuadrantRay, thit, lightIntersection);
+				float thit;
+				Intersection lightIntersection;
+				bool hitLight = shape->Intersect(secondQuadrantRay, &thit, &lightIntersection);
 				if (hitLight) {
 					secondQuadrant = areaLight->getLEmit().ToRGB();
 				}
@@ -538,9 +538,9 @@ Spectrum Li(Ray & primary_ray) {
 				thirdQuadrant = Li(thirdQuadrantRay).ToRGB();
 			}
 			else {
-				float * thit = new float();
-				Intersection * lightIntersection = new Intersection();
-				bool hitLight = shape->Intersect(thirdQuadrantRay, thit, lightIntersection);
+				float thit;
+				Intersection lightIntersection;
+				bool hitLight = shape->Intersect(thirdQuadrantRay, &thit, &lightIntersection);
 				if (hitLight) {
 					thirdQuadrantRay = areaLight->getLEmit().ToRGB();
 				}
@@ -575,9 +575,9 @@ Spectrum Li(Ray & primary_ray) {
 				fourthQuadrant = Li(fourthQuadrantRay).ToRGB();
 			}
 			else {
-				float * thit = new float();
-				Intersection * lightIntersection = new Intersection();
-				bool hitLight = shape->Intersect(fourthQuadrantRay, thit, lightIntersection);
+				float thit;
+				Intersection lightIntersection;
+				bool hitLight = shape->Intersect(fourthQuadrantRay, &thit, &lightIntersection);
 				if (hitLight) {
 					fourthQuadrantRay = areaLight->getLEmit().ToRGB();
 				}
@@ -688,9 +688,9 @@ Spectrum Li(Ray & primary_ray) {
 						color = Li(primaryRay).ToRGB();
 					}
 					else {
-						float * thit = new float();
-						Intersection * lightIntersection = new Intersection();
-						bool hitLight = shape->Intersect(primaryRay, thit, lightIntersection);
+						float thit;
+						Intersection lightIntersection;
+						bool hitLight = shape->Intersect(primaryRay, &thit, &lightIntersection);
 						if (hitLight) {
 							color = areaLight->getLEmit().ToRGB();
 						}else{
@@ -746,9 +746,9 @@ Spectrum Li(Ray & primary_ray) {
 						color = Li(primaryRay).ToRGB();
 					}
 					else {
-						float * thit = new float();
-						Intersection * lightIntersection = new Intersection();
-						bool hitLight = shape->Intersect(primaryRay, thit, lightIntersection);
+						float thit;
+						Intersection lightIntersection;
+						bool hitLight = shape->Intersect(primaryRay, &thit, &lightIntersection);
 						if (hitLight) {
 							color = areaLight->getLEmit().ToRGB();
 						}
@@ -793,9 +793,9 @@ Spectrum Li(Ray & primary_ray) {
 		Spectrum Ld(0.f);
 		//Sample light source with multiple importance sampling 858
 		vec3 wi;
-		Intersection * lightHit = new Intersection();
+		Intersection lightHit;
 		float lightPdf = 0, scatteringPdf = 0;
-		Spectrum Li = light.Sample_Li(it, lightHit, uLight, &wi, &lightPdf);
+		Spectrum Li = light.Sample_Li(it, &lightHit, uLight, &wi, &lightPdf);
 
 		if (lightPdf > 0 && !Li.IsBlack()) {
 			//Compute BSDF value for light sample 859
@@ -810,9 +810,9 @@ Spectrum Li(Ray & primary_ray) {
 
 				//Compute effect of visibility for light source sample 859
 
-				const float distance_to_light = length(lightHit->position - isect.position);
+				const float distance_to_light = length(lightHit.position - isect.position);
 				const float falloff_factor = 1.0f / (distance_to_light*distance_to_light);
-				Ray lightRay(isect.position + EPSILON * isect.geometry_normal, normalize(lightHit->position - isect.position), 0.0f, distance_to_light);
+				Ray lightRay(isect.position + EPSILON * isect.geometry_normal, normalize(lightHit.position - isect.position), 0.0f, distance_to_light);
 
 				if (!occluded(lightRay)) {
 					//vec3 wi = normalize(point_light.position - hit.position);
@@ -865,10 +865,10 @@ Spectrum Li(Ray & primary_ray) {
 			}
 
 			Spectrum Tr(1.f);
-			float * tHit = new float();
-			bool lightIntersect = shape->Intersect(ray, tHit, &it);
+			float tHit;
+			bool lightIntersect = shape->Intersect(ray, &tHit, &it);
 			if (lightIntersect) {
-				ray.tfar = *tHit;
+				ray.tfar = tHit;
 				lightIntersect = !occluded(ray);
 			}
 			//Add light contribution from material sampling 861
