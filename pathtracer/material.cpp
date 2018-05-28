@@ -52,7 +52,7 @@ namespace pathtracer
                 }
             case 1:
                 { 
-                    float m = sqrt(2.0f/(shininess+2));
+                    float m = sqrt(2.0f / (shininess + 2));
                     return beckDiff(ndotwh, m);
                     break;
                 }
@@ -265,7 +265,8 @@ namespace pathtracer
 	}
 
 	Spectrum CustomDefined::f(const vec3 & wi, const vec3 & wo, const vec3 & n) {
-		return reflection_brdf(wi, wo, n) + refraction_brdf(wi, wo, n); 
+		//return reflection_brdf(wi, wo, n) + refraction_brdf(wi, wo, n); 
+		return reflection_brdf(wi, wo, n);
 	}
 
 	Spectrum CustomDefined::sample_wi(vec3 & wi, const vec3 & wo, const vec3 & n, float & p) {

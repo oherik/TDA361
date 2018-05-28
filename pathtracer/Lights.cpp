@@ -2,12 +2,14 @@
 #include "sampling.h"
 #include <complex>
 #include "Pathtracer.h"
+#include <limits>
+
 
 namespace pathtracer
 {
 
 	//Sphere
-	float pathtracer::Shape::Pdf(Intersection &ref, vec3 &wi){
+	float pathtracer::Shape::Pdf(Intersection &ref, vec3 &wi) {
 		Ray ray;
 		ray.o = ref.position;
 		ray.d = wi;
@@ -24,14 +26,14 @@ namespace pathtracer
 	}
 
 
-	bool pathtracer::Sphere::Intersect(Ray & _ray, float * tHit, Intersection * hit){
+	bool pathtracer::Sphere::Intersect(Ray & _ray, float * tHit, Intersection * hit) {
 		float phi;
 		vec3 pHit;
 
 		//transform ray into objectspace
 
 		Ray ray((*(this->worldToObject) * vec4(_ray.o, 1)), normalize(*(this->worldToObject) * vec4(_ray.d, 1)), 0.0f, _ray.tfar);
-		
+
 		//Compute quadric sphere coordinates
 
 		vec3 d = ray.d;
@@ -58,7 +60,7 @@ namespace pathtracer
 
 		//Compute sphere hit pos and phi
 		pHit = ray.o + ray.d * tShapeHit;
-		
+
 		//Refine sphere intersection point
 		pHit *= radius / distance(pHit, vec3(0, 0, 0));
 
@@ -88,11 +90,11 @@ namespace pathtracer
 
 		return true;
 	}
-	float pathtracer::Sphere::area(){
+	float pathtracer::Sphere::area() {
 		return phiMax * radius * (zMax - zMin);
 	}
 
-	Intersection pathtracer::Sphere::Sample(vec2 & u){
+	Intersection pathtracer::Sphere::Sample(vec2 & u) {
 		vec3 pObj = vec3(0) + radius * UniformSampleSphere(u);
 		Intersection it;
 		it.geometry_normal = normalize(*(this->objectToWorld) * (vec4(pObj.x, pObj.y, pObj.z, 1)));
@@ -106,11 +108,169 @@ namespace pathtracer
 	}
 
 
-	vec3 pathtracer::Sphere::UniformSampleSphere(vec2 & u){
+	vec3 pathtracer::Sphere::UniformSampleSphere(vec2 & u) {
 		float z = 1 - 2 * u.x;
 		float r = sqrt(std::max((float)0, (float)1 - z * z));
 		float phi = 2 * M_PI * u[1];
 		return vec3(r * cos(phi), r * sin(phi), z);
+	}
+
+	//Cube
+
+	bool checkSide(float e, float f, float h, float &tmin, float &tmax) {
+		if (abs(f) > EPSILON) {
+			float t1 = (e + h) / f;
+			float t2 = (e - h) / f;
+
+			if (t1 > t2) {
+				swap(t1, t2);
+			}
+			if (t1 > tmin) {
+				tmin = t1;
+			}
+			if (t2 < tmax) {
+				tmax = t2;
+			}
+			if (tmax < 0) {
+				return false;
+			}
+		}
+		else if (-e - h > 0 || -e + h < 0) {
+			return false;
+		}
+		return true;
+	}
+
+	bool Cube::Intersect(Ray & ray, float * tHit, Intersection * hit) {
+
+		//transform ray into objectspace
+		//Ray ray((*(this->worldToObject) * vec4(_ray.o, 1)), normalize(*(this->worldToObject) * vec4(_ray.d, 1)), 0.0f, _ray.tfar);
+
+		vec3 hw = vec3(0.0f, 0.0f, side / 2.0f);
+		vec3 hv = vec3(0.0f, side / 2.0f, 0.0f);
+		vec3 hu = vec3(side / 2.0f, 0.0f, 0.0f);
+
+		vec3 aw = normalize(hw);
+		vec3 av = normalize(hv);
+		vec3 au = normalize(hu);
+		float tmin = -std::numeric_limits<float>::max();
+		float tmax = std::numeric_limits<float>::max();
+
+		vec3 p = vec3(0.0f) - ray.o;
+
+		float h = side / 2.0f;
+
+		//for each side
+
+		//au
+		float e = dot(au, p);
+		float f =  dot(au, ray.d);
+		bool ret = !checkSide(e, f, h, tmin, tmax);
+		if (ret) {
+			return false;
+		}
+
+		//av
+		e = dot(av, p);
+		f = dot(av, ray.d);
+		ret = !checkSide(e, f, h, tmin, tmax);
+		if (ret) {
+			return false;
+		}
+
+		//aw
+		e = dot(aw, p);
+		f = dot(aw, ray.d);
+
+		ret = !checkSide(e, f, h, tmin, tmax);
+		if (ret) {
+			return false;
+		}
+
+		//get hit position
+		if (tmin > 0) {
+			hit->position = ray.o + tmin * ray.d;
+			*tHit = tmin;
+		}
+		else {
+			hit->position = ray.o + tmin * ray.d;
+			*tHit = tmax;
+		}
+
+		//figure out normal
+		if (abs(hit->position.x) > abs(hit->position.y) && abs(hit->position.x) > abs(hit->position.z)) {
+			hit->geometry_normal = normalize(vec3(hit->position.x, 0.0f, 0.0f));
+		}
+		else if (abs(hit->position.y) > abs(hit->position.z)) {
+			hit->geometry_normal = normalize(vec3(0.0f, hit->position.y, 0.0f));
+		}
+		else {
+			hit->geometry_normal = normalize(vec3(0.0f, 0.0f, hit->position.z));
+		}
+
+		//translate back to worldspace
+		//hit->geometry_normal = normalize(vec3((*objectToWorld) * vec4(hit->geometry_normal, 1.0f)));
+		//hit->position = vec3((*objectToWorld) * vec4(hit->position, 1.0f));
+
+
+		return true;
+	}
+
+	float Cube::area(){
+		return side * side * 6;
+	}
+
+	Intersection Cube::Sample(vec2 & u){
+
+		int side = randf() * 6;
+		float rand1 = (randf() - 0.5f) * side;
+		float rand2 = (randf() - 0.5f) * side;
+
+
+		Intersection it = Intersection();
+
+		switch (side) {
+		case 0: 
+			it.position = vec3(rand1, rand2, side);
+			it.geometry_normal = vec3(0.0f, 0.0f, 1.0f);
+			break;
+		case 1: 
+			it.position = vec3(rand1, rand2, -side);
+			it.geometry_normal = vec3(0.0f, 0.0f, -1.0f);
+
+			break;
+		case 2: 
+			it.position = vec3(side, rand1, rand2);
+			it.geometry_normal = vec3(1.0f, 0.0f, 0.0f);
+
+			break;
+		case 3: 
+			it.position = vec3(-side, rand1, rand2);
+			it.geometry_normal = vec3(-1.0f, 0.0f, 0.0f);
+
+			break;
+		case 4: 
+			it.position = vec3(rand1, side, rand2);
+			it.geometry_normal = vec3(0.0f, 1.0f, 0.0f);
+
+			break;
+		case 5: 
+			it.position = vec3(rand1, -side, rand2);
+			it.geometry_normal = vec3(0.0f, -1.0f, 0.0f);
+
+			break;
+		}
+
+		it.position = vec3(*(this->objectToWorld) * vec4(it.position, 1.0f));
+		it.geometry_normal = vec3(*(this->objectToWorld) * vec4(it.geometry_normal, 1.0f));
+
+		return Intersection();
+	}
+
+	//obsolete for cube.
+	vec3 Cube::UniformSampleSphere(vec2 & u)
+	{
+		return vec3();
 	}
 
 	//Disc
@@ -192,6 +352,10 @@ namespace pathtracer
 		return Intersection();
 	}
 
+	Spectrum pathtracer::AreaLight::Le(vec3 &n, vec3 &w){
+		return L(n, w);
+	}
+
 	float pathtracer::AreaLight::pdf(vec3 lightPos, Intersection hit, vec3 n, vec3 wi){
 		vec3 lightVec = lightPos - hit.position;
 		float lengthSquared = lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z;
@@ -206,6 +370,11 @@ namespace pathtracer
 	Spectrum pathtracer::AreaLight::getLEmit(){
 		return this->lEmit;
 	}
+
+	float pathtracer::AreaLight::Pdf_Li(Intersection & it, vec3 & wi){
+		return shape->Pdf(it, wi);
+	}
+
 	
     //DiffuseAreaLight
     Spectrum DiffuseAreaLight::L(vec3 &n, vec3 &w){ 
@@ -214,16 +383,11 @@ namespace pathtracer
     } 
 
     Spectrum DiffuseAreaLight::Sample_Li(Intersection &ref, Intersection *lightHit, vec2 &u, vec3 *wi, float *pdf) {
-        *lightHit = shape->Sample(u);
+        *lightHit = AreaLight::shape->Sample(u);
 		*wi = normalize(lightHit->position - ref.position);
         *pdf = this->shape->Pdf(ref, *wi);
 		Spectrum lEmit = L(lightHit->geometry_normal,  -*wi);
 		return lEmit;
-    }
-	
-
-    float DiffuseAreaLight::Pdf_Li(Intersection &ref, vec3 &wi) {
-        return shape->Pdf(ref, wi);
     }
 
 	Spectrum pathtracer::DiffuseAreaLight::Power(){
@@ -258,4 +422,7 @@ namespace pathtracer
 		return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
 	}
 
+	
+	
+	
 }

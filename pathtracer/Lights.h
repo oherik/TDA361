@@ -50,6 +50,23 @@ namespace pathtracer{
             vec3 UniformSampleSphere( vec2 &u);
 			//float Pdf( Intersection &ref,  vec3 &wi)  override;
 	};
+
+
+	class Cube : public Shape {
+	private:
+		float side;
+	public:
+		Cube(mat4 *_objectToWorld, mat4 *_worldToObject, float _side) :
+			Shape(_objectToWorld, _worldToObject),
+			side(_side){}
+
+		bool Intersect(Ray &_ray, float *tHit, Intersection *hit)  override;
+		float area() override;
+		Intersection Sample(vec2 &u)  override;
+		vec3 UniformSampleSphere(vec2 &u);
+		//float Pdf( Intersection &ref,  vec3 &wi)  override;
+	};
+
 	
 	class Disk : public Shape {
 	public:
@@ -81,9 +98,6 @@ namespace pathtracer{
             int nSamples;
             virtual Spectrum Sample_Li( Intersection &ref, Intersection *lightHit,  vec2 &u, vec3 *wi, float *pdf) = 0;
             virtual Spectrum Power() = 0;
-			Spectrum Le(const Ray &ray) const {
-				return Spectrum(0.f);
-			}
 
         protected:
              mat4 LightToWorld, WorldToLight;
@@ -92,25 +106,26 @@ namespace pathtracer{
 
     class AreaLight : public Light {
         public:
+			Shape * shape;
 			Spectrum lEmit;
-            AreaLight(mat4 * LightToWorld, Spectrum _lEmit, int nSamples = 1)
-                : Light(4, LightToWorld, nSamples), lEmit(_lEmit){};
+			AreaLight(mat4 * LightToWorld, Spectrum _lEmit, Shape *_shape, int nSamples = 1)
+				: Light(4, LightToWorld, nSamples), lEmit(_lEmit), shape(_shape) {};
             virtual Spectrum L( vec3 &coordinate,  vec3 &w) = 0; 
             float pdf(vec3 lightPos, Intersection hit, vec3 n, vec3 wi);
 			virtual float getArea() = 0;
 			Spectrum getLEmit();
+			float Pdf_Li(Intersection &it, vec3 &wi);
+			Spectrum Le(vec3 &n, vec3 &w);
+
     };
 
 
     class DiffuseAreaLight : public AreaLight {
         public:
             float area;
-            Shape * shape;
-            DiffuseAreaLight(mat4 * LightToWorld, Spectrum _lEmit, int nSamples, Shape *shape)
-            : AreaLight(LightToWorld, _lEmit, nSamples),
-            shape(shape), area(shape->area()) {};
-     
-            float Pdf_Li( Intersection &ref,  vec3 &wi);
+            DiffuseAreaLight(mat4 * LightToWorld, Spectrum _lEmit, Shape *shape, int nSamples)
+            : AreaLight(LightToWorld, _lEmit, shape, nSamples),
+            area(shape->area()) {};
             Spectrum L( vec3 &n,  vec3 &w) override;
             Spectrum Sample_Li( Intersection &ref, Intersection *lightHit,  vec2 &u, vec3 *wi, float *pdf) override;
             Spectrum Power() override;
